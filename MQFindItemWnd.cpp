@@ -112,76 +112,79 @@ enum ItemTypeID {
 	ItemType_1H_Blunt,
 	ItemType_2H_Blunt,
 	ItemType_Bow,
-	//What is 6?
-	ItemType_Throwing = 7,
+	ItemType_Crossbow,
+	ItemType_Throwing,
 	ItemType_Shield,
-	//What is 9
-	ItemType_Armor = 10,
+	ItemType_Spell,
+	ItemType_Armor,
 	ItemType_Misc,
-	ItemType_Lockpicks, /**/
-	//What is 13?
-	ItemType_Food = 14,
+	ItemType_Lockpicks,
+	ItemType_Fist,
+	ItemType_Food,
 	ItemType_Drink,
 	ItemType_Light,
 	ItemType_Combinable,
 	ItemType_Bandage,
-	ItemType_Ammo, /*,*/
-	ItemType_Spell,/*ItemType_Scroll,*/
+	ItemType_Ammo,
+	ItemType_Scroll,
 	ItemType_Potion,
-	//What is 22?
-	ItemType_Wind_Instrument = 23,
+	ItemType_Skill,
+	ItemType_Wind_Instrument,
 	ItemType_Stringed_Instrument,
 	ItemType_Brass_Instruments,
 	ItemType_Percussion_Instrument,
 	ItemType_Arrow,
-	//What is 28?
-	ItemType_Jewelry = 29,
-	ItemType_Skull,
+	ItemType_Bolt,//Crossbow Ammo
+	ItemType_Jewelry,
+	ItemType_Artifact,
 	ItemType_Book,
 	ItemType_Note,
 	ItemType_Key,
-	ItemType_Coin,
+	ItemType_Ticket,
 	ItemType_2H_Piercing,
 	ItemType_FishingPole,
 	ItemType_FishingBait,
 	ItemType_Alcohol,
-	ItemType_KeyV2,
+	ItemType_House_Key,
 	ItemType_Compass,
-	//What is 41?
-	ItemType_Poison = 42,
-	//What is 43?
-	//What is 44?
-	ItemType_Martial = 45,
-	//What is 46?
-	//What is 47?
-	//What is 48?
-	//What is 49?
-	//What is 50?
-	//What is 51?
-	ItemType_Charm = 52,
+	ItemType_Metal_Key,
+	ItemType_Poison,
+	ItemType_MagicArrow,
+	ItemType_MagicBolt,
+	ItemType_Martial,
+	ItemType_NotReal_HasEffects,
+	ItemType_NotReal_Haste_Item,
+	ItemType_NotReal_Has_FT,
+	ItemType_NotReal_HasFocus,
+	ItemType_Singing_Instrument,
+	ItemType_All_Instrument,
+	ItemType_Charm,
 	ItemType_ArmorDye,
-	ItemType_Augmentation,//Did not function
-	ItemType_AugSolvent,
-	ItemType_AugDistiller,
-	//What is 57?
-	ItemType_Banner = 58,
-	//What is 59?
-	ItemType_RecipeBook = 60,
-
-
-	ItemType_AltCurrency = 63,
+	ItemType_Augmentation,
+	ItemType_AugDestroySolvent,
+	ItemType_AugRemoveSolvent,
+	ItemType_AltAbility,
+	ItemType_GuildBanner,
+	ItemType_BannerModifyToken,
+	ItemType_RecipeBook,
+	ItemType_VoluntarySpellCastBook,
+	ItemType_SpellCastBook,
+	ItemType_PointCurrency,
 	ItemType_PerfectedDistiller,
-
-
-	ItemType_Mount = 68,
+	ItemType_NotReal_Placable,
+	ItemType_NotReal_Collectible,
+	ItemType_NotReal_Container,
+	ItemType_Mount,
 	ItemType_Illusion,
-	ItemType_Familiar = 70,//Last "real" ItemType
+	ItemType_Familiar,//Last "real" ItemType
 
+//#if (!IS_EMU_CLIENT)
 	ItemType_All_Effects,//Will have to combine all the look ups for effects?
 	ItemType_Collectible,//pItem->Collectible
 	ItemType_Container,//pItem->IsContainer
 	ItemType_Focus_Effect,//pItem->Focus stuff
 	ItemType_Placeable,//pItem->Placable
+//#endif
 
 	//Custom Options I'm Adding perhaps:
 	//Clicky
@@ -266,7 +269,7 @@ std::map<OptionType, DropDownOption> MenuData = {
 #endif
 	} } },
 
-	{OptionType_Slots, { {
+	{ OptionType_Slots, { {
 			Option("Ammo", Slot_Ammo),
 			Option("Arms", Slot_Arms),
 			Option("Back", Slot_Back),
@@ -292,7 +295,7 @@ std::map<OptionType, DropDownOption> MenuData = {
 			//Option("Wrist2", Slot_RightWrist),
 	} } },
 
-	{OptionType_Race, { {
+	{ OptionType_Race, { {
 			Option("Barbarian", Race_Barbarian),
 			Option("Dark Elf", Race_DarkElf),
 			Option("Drakkin", Race_Drakkin),
@@ -338,20 +341,34 @@ std::map<OptionType, DropDownOption> MenuData = {
 			Option("2H Piercing", ItemType_2H_Piercing),
 			Option("2H Slashing", ItemType_2H_Slashing),
 			Option("Alcohol", ItemType_Alcohol),
-			/*Option("Alternate Ability", ItemType_Alternate_Ability),*/
-			Option("All Effects", ItemType_All_Effects),
+			Option("Alternate Currency", ItemType_PointCurrency),
+			//Option("All Effects", ItemType_All_Effects),//We'll need to review how to implement
+			Option("Ammo", ItemType_Ammo),
 			Option("Armor", ItemType_Armor),
+			Option("Armor Dye", ItemType_ArmorDye),
 			Option("Arrow", ItemType_Arrow),
+			Option("Aug Distiller", ItemType_AugDestroySolvent),
 			Option("Augmentation", ItemType_Augmentation),
+			Option("Aug Solvent", ItemType_AugRemoveSolvent),
 			Option("Bandage", ItemType_Bandage),
+			Option("Banner", ItemType_GuildBanner),
 			Option("Book", ItemType_Book),
 			Option("Bow", ItemType_Bow),
 			Option("Brass Instruments", ItemType_Brass_Instruments),
+			Option("Charm", ItemType_Charm),
+			Option("Coin", ItemType_Ticket),
+#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe emu specific?
 			Option("Collectible", ItemType_Collectible),
+#endif
 			Option("Combinable", ItemType_Combinable),
+			Option("Compass", ItemType_Compass),
+#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses
 			Option("Container", ItemType_Container),
+#endif
 			Option("Drink", ItemType_Drink),
+#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses
 			Option("Focus Effect", ItemType_Focus_Effect),
+#endif
 			Option("Food", ItemType_Food),
 			Option("Jewelry", ItemType_Jewelry),
 			Option("Key", ItemType_Key),
@@ -360,7 +377,10 @@ std::map<OptionType, DropDownOption> MenuData = {
 			Option("Misc", ItemType_Misc),
 			Option("Note", ItemType_Note),
 			Option("Percussion Instrument", ItemType_Percussion_Instrument),
+
+#if (!IS_EMU_CLIENT)
 			Option("Placeable", ItemType_Placeable),
+#endif
 			Option("Potion", ItemType_Potion),
 			/*Option("Scroll", ItemType_Scroll),*/
 			Option("Shield", ItemType_Shield),
@@ -627,16 +647,35 @@ bool MatchesItemType(ItemClient* pItem) {
 
 	if (anySlotSelected) {
 		bool foundMatch = false;
+		int currentoption = 0;
+		const uint8_t ItemType = pItem->GetItemClass();
 		for (auto& option : itemTypeData) {
 			if (option.IsSelected) {
-				if (pItem->GetItemClass() == option.ID) {
+				currentoption = option.ID;
+				if (ItemType == option.ID) {
 					foundMatch = true;
 					break;
 				}
 			}
 		}
 
-		WriteChatf("Item: \ap%s is ItemClass: %s", pItemDef->Name, szItemClasses[pItem->GetItemClass()]);
+#ifdef DEBUGGING
+		if (ItemType > 70) {//This outputs the itemtype of the item.
+			WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
+		}
+
+		//These output the ItemType from the szItemClasses array for both the ItemType and type for the option.ID
+		if (currentoption <= 70) {
+			if (!foundMatch) {
+				WriteChatf("\arItem: \ap%s\ax is \ayItemClass: \at%s\ax was looking for \a-t%s", pItemDef->Name, szItemClasses[ItemType], szItemClasses[currentoption]);
+			}
+			else {
+
+				WriteChatf("\agItem: \ap%s\ax is \ayItemClass: \at%s\ax was looking for \a-t%s", pItemDef->Name, szItemClasses[ItemType], szItemClasses[currentoption]);
+			}
+		}
+#endif
+
 		return foundMatch;
 	}
 
@@ -739,63 +778,6 @@ PLUGIN_API void ShutdownPlugin()
 	// RemoveMQ2Data("mytlo");
 }
 
-/**
- * @fn OnCleanUI
- *
- * This is called once just before the shutdown of the UI system and each time the
- * game requests that the UI be cleaned.  Most commonly this happens when a
- * /loadskin command is issued, but it also occurs when reaching the character
- * select screen and when first entering the game.
- *
- * One purpose of this function is to allow you to destroy any custom windows that
- * you have created and cleanup any UI items that need to be removed.
- */
-PLUGIN_API void OnCleanUI()
-{
-	// DebugSpewAlways("MQFindItemWnd::OnCleanUI()");
-}
-
-/**
- * @fn OnReloadUI
- *
- * This is called once just after the UI system is loaded. Most commonly this
- * happens when a /loadskin command is issued, but it also occurs when first
- * entering the game.
- *
- * One purpose of this function is to allow you to recreate any custom windows
- * that you have setup.
- */
-PLUGIN_API void OnReloadUI()
-{
-	// DebugSpewAlways("MQFindItemWnd::OnReloadUI()");
-}
-
-/**
- * @fn OnDrawHUD
- *
- * This is called each time the Heads Up Display (HUD) is drawn.  The HUD is
- * responsible for the net status and packet loss bar.
- *
- * Note that this is not called at all if the HUD is not shown (default F11 to
- * toggle).
- *
- * Because the net status is updated frequently, it is recommended to have a
- * timer or counter at the start of this call to limit the amount of times the
- * code in this section is executed.
- */
-PLUGIN_API void OnDrawHUD()
-{
-/*
-	static std::chrono::steady_clock::time_point DrawHUDTimer = std::chrono::steady_clock::now();
-	// Run only after timer is up
-	if (std::chrono::steady_clock::now() > DrawHUDTimer)
-	{
-		// Wait half a second before running again
-		DrawHUDTimer = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
-		DebugSpewAlways("MQFindItemWnd::OnDrawHUD()");
-	}
-*/
-}
 
 /**
  * @fn SetGameState
@@ -817,187 +799,6 @@ PLUGIN_API void SetGameState(int GameState)
 {
 	// DebugSpewAlways("MQFindItemWnd::SetGameState(%d)", GameState);
 }
-
-
-/**
- * @fn OnPulse
- *
- * This is called each time MQ2 goes through its heartbeat (pulse) function.
- *
- * Because this happens very frequently, it is recommended to have a timer or
- * counter at the start of this call to limit the amount of times the code in
- * this section is executed.
- */
-PLUGIN_API void OnPulse()
-{
-/*
-	static std::chrono::steady_clock::time_point PulseTimer = std::chrono::steady_clock::now();
-	// Run only after timer is up
-	if (std::chrono::steady_clock::now() > PulseTimer)
-	{
-		// Wait 5 seconds before running again
-		PulseTimer = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-		DebugSpewAlways("MQFindItemWnd::OnPulse()");
-	}
-*/
-}
-
-/**
- * @fn OnWriteChatColor
- *
- * This is called each time WriteChatColor is called (whether by MQ2Main or by any
- * plugin).  This can be considered the "when outputting text from MQ" callback.
- *
- * This ignores filters on display, so if they are needed either implement them in
- * this section or see @ref OnIncomingChat where filters are already handled.
- *
- * If CEverQuest::dsp_chat is not called, and events are required, they'll need to
- * be implemented here as well.  Otherwise, see @ref OnIncomingChat where that is
- * already handled.
- *
- * For a list of Color values, see the constants for USERCOLOR_.  The default is
- * USERCOLOR_DEFAULT.
- *
- * @param Line const char* - The line that was passed to WriteChatColor
- * @param Color int - The type of chat text this is to be sent as
- * @param Filter int - (default 0)
- */
-PLUGIN_API void OnWriteChatColor(const char* Line, int Color, int Filter)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnWriteChatColor(%s, %d, %d)", Line, Color, Filter);
-}
-
-/**
- * @fn OnIncomingChat
- *
- * This is called each time a line of chat is shown.  It occurs after MQ filters
- * and chat events have been handled.  If you need to know when MQ2 has sent chat,
- * consider using @ref OnWriteChatColor instead.
- *
- * For a list of Color values, see the constants for USERCOLOR_. The default is
- * USERCOLOR_DEFAULT.
- *
- * @param Line const char* - The line of text that was shown
- * @param Color int - The type of chat text this was sent as
- *
- * @return bool - Whether to filter this chat from display
- */
-PLUGIN_API bool OnIncomingChat(const char* Line, DWORD Color)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnIncomingChat(%s, %d)", Line, Color);
-	return false;
-}
-
-/**
- * @fn OnAddSpawn
- *
- * This is called each time a spawn is added to a zone (ie, something spawns). It is
- * also called for each existing spawn when a plugin first initializes.
- *
- * When zoning, this is called for all spawns in the zone after @ref OnEndZone is
- * called and before @ref OnZoned is called.
- *
- * @param pNewSpawn PSPAWNINFO - The spawn that was added
- */
-PLUGIN_API void OnAddSpawn(PSPAWNINFO pNewSpawn)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnAddSpawn(%s)", pNewSpawn->Name);
-}
-
-/**
- * @fn OnRemoveSpawn
- *
- * This is called each time a spawn is removed from a zone (ie, something despawns
- * or is killed).  It is NOT called when a plugin shuts down.
- *
- * When zoning, this is called for all spawns in the zone after @ref OnBeginZone is
- * called.
- *
- * @param pSpawn PSPAWNINFO - The spawn that was removed
- */
-PLUGIN_API void OnRemoveSpawn(PSPAWNINFO pSpawn)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnRemoveSpawn(%s)", pSpawn->Name);
-}
-
-/**
- * @fn OnAddGroundItem
- *
- * This is called each time a ground item is added to a zone (ie, something spawns).
- * It is also called for each existing ground item when a plugin first initializes.
- *
- * When zoning, this is called for all ground items in the zone after @ref OnEndZone
- * is called and before @ref OnZoned is called.
- *
- * @param pNewGroundItem PGROUNDITEM - The ground item that was added
- */
-PLUGIN_API void OnAddGroundItem(PGROUNDITEM pNewGroundItem)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnAddGroundItem(%d)", pNewGroundItem->DropID);
-}
-
-/**
- * @fn OnRemoveGroundItem
- *
- * This is called each time a ground item is removed from a zone (ie, something
- * despawns or is picked up).  It is NOT called when a plugin shuts down.
- *
- * When zoning, this is called for all ground items in the zone after
- * @ref OnBeginZone is called.
- *
- * @param pGroundItem PGROUNDITEM - The ground item that was removed
- */
-PLUGIN_API void OnRemoveGroundItem(PGROUNDITEM pGroundItem)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnRemoveGroundItem(%d)", pGroundItem->DropID);
-}
-
-/**
- * @fn OnBeginZone
- *
- * This is called just after entering a zone line and as the loading screen appears.
- */
-PLUGIN_API void OnBeginZone()
-{
-	// DebugSpewAlways("MQFindItemWnd::OnBeginZone()");
-}
-
-/**
- * @fn OnEndZone
- *
- * This is called just after the loading screen, but prior to the zone being fully
- * loaded.
- *
- * This should occur before @ref OnAddSpawn and @ref OnAddGroundItem are called. It
- * always occurs before @ref OnZoned is called.
- */
-PLUGIN_API void OnEndZone()
-{
-	// DebugSpewAlways("MQFindItemWnd::OnEndZone()");
-}
-
-/**
- * @fn OnZoned
- *
- * This is called after entering a new zone and the zone is considered "loaded."
- *
- * It occurs after @ref OnEndZone @ref OnAddSpawn and @ref OnAddGroundItem have
- * been called.
- */
-PLUGIN_API void OnZoned()
-{
-	// DebugSpewAlways("MQFindItemWnd::OnZoned()");
-}
-
-/**
- * @fn OnUpdateImGui
- *
- * This is called each time that the ImGui Overlay is rendered. Use this to render
- * and update plugin specific widgets.
- *
- * Because this happens extremely frequently, it is recommended to move any actual
- * work to a separate call and use this only for updating the display.
- */
 
 PLUGIN_API void OnUpdateImGui() {
 	if (GetGameState() != GAMESTATE_INGAME) {
