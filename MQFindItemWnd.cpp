@@ -9,6 +9,7 @@
 
 PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
+//#define DEBUGGING
 
 struct Option {
 	std::string Name;
@@ -477,6 +478,10 @@ void GetRaces(ItemClient* pItem, std::vector<int>& vVector) {
 	}
 }
 
+/*
+This will check if any of the options were selected in a category
+We can use that to determine if we should check the filters at all.
+*/
 bool IsAnySelected(const std::vector<Option>& OptionData) {
 	//None is all. Basically if nothing is selected, then any will do.
 	for (auto& option : OptionData) {
@@ -551,7 +556,7 @@ bool MatchesClasses(ItemClient* pItem) {
 				auto it = std::find(Classes.begin(), Classes.end(), option.ID);
 				if (it != Classes.end()) {
 					foundMatch = true;
-					break;
+					break;//Only need to match one filter.
 				}
 			}
 		}
@@ -561,11 +566,6 @@ bool MatchesClasses(ItemClient* pItem) {
 
 	return true;
 }
-
-//This stores the globalindex for all slots?
-/*for (const auto& [key, value] : ItemSlotMap) {
-	WriteChatf("Key: %s, Value: %u\n", key.c_str(), value);
-}*/
 
 void GetSlots(ItemClient* pItem, std::vector<int>& vVector) {
 	if (!pItem)
@@ -654,28 +654,44 @@ bool DoesItemMatchFilters(ItemClient* pItem) {
 	}
 
 	//No Drop Filters
-	if (bOnlyShowDroppable && !pItemDef->IsDroppable || pItem->NoDropFlag) {
-		//WriteChatf("\arExcluding: \ap%s\ax is \arDroppable: \ay%d \arNoDropFlag: \ay%d", pItemDef->Name, pItemDef->IsDroppable, pItem->NoDropFlag);
+	if (bOnlyShowDroppable && (!pItemDef->IsDroppable || pItem->NoDropFlag)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\ax is \arDroppable: \ay%d \arNoDropFlag: \ay%d", pItemDef->Name, pItemDef->IsDroppable, pItem->NoDropFlag);
+#endif
 		return false;
 	}
 	else if (bOnlyShowNoDrop && pItemDef->IsDroppable && !pItem->NoDropFlag) {
-		//WriteChatf("\arExcluding: \ap%s\ax is \arDroppable: \ay%d \arNoDropFlag: \ay%d", pItemDef->Name, pItemDef->IsDroppable, pItem->NoDropFlag);
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\ax is \arDroppable: \ay%d \arNoDropFlag: \ay%d", pItemDef->Name, pItemDef->IsDroppable, pItem->NoDropFlag);
+#endif
 		return false;
 	}
 
 	if (!MatchesSlots(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesSlot(pItem)", pItemDef->Name);
+#endif
 		return false;
 	}
 
 	if (!MatchesRaces(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesRace(pItem)", pItemDef->Name);
+#endif
 		return false;
 	}
 
 	if (!MatchesClasses(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesClasses(pItem)", pItemDef->Name);
+#endif
 		return false;
 	}
 
 	if (!MatchesItemType(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesItemType(pItem)", pItemDef->Name);
+#endif
 		return false;
 	}
 
@@ -1178,7 +1194,7 @@ void OutPutItemDetails(ItemClient* pItem) {
 	}
 
 	if (pItem->GetItemClass() == ItemClass_None) {
-		WriteChatf("ItemClass_None found on \ap%s", pItemDef->Name);
+		WriteChatf("\arItemClass_None found on \ap%s", pItemDef->Name);
 	}
 
 	if (DoesItemMatchFilters(pItem)) {
@@ -1320,9 +1336,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Equipped].IsSelected) {
 		for (int iWornSlot = InvSlot_FirstWornItem; iWornSlot <= InvSlot_LastWornItem; iWornSlot++) {
 			if (ItemClient* pItem = pLocalPC->GetInventorySlot(iWornSlot)) {
-				if (pItem->GetItemClass() != ItemClass_None) {
-					OutPutItemDetails(pItem);
-				}
+				OutPutItemDetails(pItem);
 			}
 		}
 	}
@@ -1330,9 +1344,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bags].IsSelected) {
 		for (int iBagSlot = InvSlot_FirstBagSlot; iBagSlot <= InvSlot_LastBagSlot; iBagSlot++) {
 			if (ItemClient* pItem = pLocalPC->GetInventorySlot(iBagSlot)) {
-				if (pItem->GetItemClass() != ItemClass_None) {
-					OutPutItemDetails(pItem);
-				}
+				OutPutItemDetails(pItem);
 			}
 		}
 	}
@@ -1340,9 +1352,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bank].IsSelected) {
 		for (int i = 0; i < NUM_BANK_SLOTS; i++) {
 			if (ItemClient* pItem = pLocalPC->BankItems.GetItem(i)) {
-				if (pItem->GetItemClass() != ItemClass_None) {
-					OutPutItemDetails(pItem);
-				}
+				OutPutItemDetails(pItem);
 			}
 		}
 
@@ -1351,9 +1361,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Shared_Bank].IsSelected) {
 		for (int i = 0; i < NUM_SHAREDBANK_SLOTS; i++) {
 			if (ItemClient* pItem = pLocalPC->SharedBankItems.GetItem(i)) {
-				if (pItem->GetItemClass() != ItemClass_None) {
-					OutPutItemDetails(pItem);
-				}
+				OutPutItemDetails(pItem);
 			}
 		}
 	}
