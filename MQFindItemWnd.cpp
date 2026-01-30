@@ -503,6 +503,20 @@ void PopulateListBoxes() {
 	}
 }
 
+/*
+This will check if any of the options were selected in a category
+We can use that to determine if we should check the filters at all.
+*/
+bool IsAnySelected(const std::vector<Option>& OptionData) {
+	for (auto& option : OptionData) {
+		if (option.IsSelected) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void GetRaces(ItemClient* pItem, std::vector<int>& vVector) {
 	if (!pItem)
 		return;
@@ -516,21 +530,6 @@ void GetRaces(ItemClient* pItem, std::vector<int>& vVector) {
 			//WriteChatf("%s", pEverQuest->GetRaceDesc(tmp));
 		}
 	}
-}
-
-/*
-This will check if any of the options were selected in a category
-We can use that to determine if we should check the filters at all.
-*/
-bool IsAnySelected(const std::vector<Option>& OptionData) {
-	//None is all. Basically if nothing is selected, then any will do.
-	for (auto& option : OptionData) {
-		if (option.IsSelected) {
-			return true;
-		}
-	}
-
-	return false;
 }
 
 bool MatchesRaces(ItemClient* pItem) {
@@ -912,8 +911,13 @@ PLUGIN_API void OnUpdateImGui() {
 	}
 
 	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
+		//Reset all the options to false.
 		if (ImGui::Button("Reset Options")) {
-
+				for (auto& [type, data] : MenuData) {
+					for (auto& opt : data.OptionList) {
+						opt.IsSelected = false;
+					}
+				}
 		}
 
 
@@ -928,7 +932,7 @@ PLUGIN_API void OnUpdateImGui() {
 
 		PopulateListBoxes();
 
-		ImGui::EndChild();
+	ImGui::EndChild();
 
 	//Results on right
 	ImGui::SameLine();
