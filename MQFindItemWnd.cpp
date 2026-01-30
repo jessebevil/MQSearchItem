@@ -6,6 +6,7 @@
 // and Shutdown for setup and cleanup.
 
 #include <mq/Plugin.h>
+#include <mq/imgui/Widgets.h>
 
 PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
@@ -419,31 +420,50 @@ std::map<OptionType, DropDownOption> MenuData = {
 	} } }
 };
 
-constexpr MQColor light_blue = MQColor(84, 172, 210);
-constexpr MQColor grey = MQColor(37, 37, 37);
-constexpr MQColor black = MQColor(12, 12, 12);
-constexpr MQColor blue = MQColor(0, 0, 255);
-constexpr MQColor teal = MQColor(0, 255, 255);
-constexpr MQColor green = MQColor(0, 255, 0);
-constexpr MQColor magenta = MQColor(255, 0, 255);
-constexpr MQColor orange = MQColor(255, 153, 0);
-constexpr MQColor purple = MQColor(128, 0, 128);
-constexpr MQColor red = MQColor(255, 0, 0);
-constexpr MQColor white = MQColor(255, 255, 255);
-constexpr MQColor yellow = MQColor(255, 255, 0);
+const char* szPlayerClasses[] = {
+	"Warrior",//1
+	"Cleric",//2
+	"Paladin"//3
+	"Ranger",//4
+	"Shadow Knight",//5
+	"Druid",//6
+	"Monk",//7
+	"Bard",//8
+	"Rogue",//9
+	"Shaman",//10
+	"Necromancer",//11
+	"Wizard",
+	"Mage",//13
+	"Enchanter",//14
+	"Beastlord",//15
+	"Berserker"//16
+};
+
+constexpr MQColor light_blue = { 84, 172, 210 };
+constexpr MQColor grey = { 37, 37, 37 };
+constexpr MQColor black = { 12, 12, 12 };
+constexpr MQColor blue = { 0, 0, 255 };
+constexpr MQColor teal = { 0, 255, 255 };
+constexpr MQColor green = { 0, 255, 0 };
+constexpr MQColor magenta = { 255, 0, 255 };
+constexpr MQColor orange = { 255, 153, 0 };
+constexpr MQColor purple = { 128, 0, 128 };
+constexpr MQColor red = { 255, 0, 0 };
+constexpr MQColor white = { 255, 255, 255 };
+constexpr MQColor yellow = { 255, 255, 0 };
 
 //dark colors
-constexpr MQColor black_dark = MQColor(12, 12, 12);
-constexpr MQColor blue_dark = MQColor(0, 0, 153);
-constexpr MQColor grey_dark = MQColor(28, 28, 28);
-constexpr MQColor teal_dark = MQColor(0, 153, 153);
-constexpr MQColor green_dark = MQColor(0, 153, 0);
-constexpr MQColor magenta_dark = MQColor(255, 0, 255);
-constexpr MQColor orange_dark = MQColor(153, 102, 0);
-constexpr MQColor purple_dark = MQColor(153, 0, 153);
-constexpr MQColor red_dark = MQColor(230, 0, 0);
-constexpr MQColor white_dark = MQColor(255, 255, 255);
-constexpr MQColor yellow_dark = MQColor(153, 153, 0);
+constexpr MQColor black_dark = { 12, 12, 12 };
+constexpr MQColor blue_dark = { 0, 0, 153 };
+constexpr MQColor grey_dark = { 28, 28, 28 };
+constexpr MQColor teal_dark = { 0, 153, 153 };
+constexpr MQColor green_dark = { 0, 153, 0 };
+constexpr MQColor magenta_dark = { 255, 0, 255 };
+constexpr MQColor orange_dark = { 153, 102, 0 };
+constexpr MQColor purple_dark = { 153, 0, 153 };
+constexpr MQColor red_dark = { 230, 0, 0 };
+constexpr MQColor white_dark = { 255, 255, 255 };
+constexpr MQColor yellow_dark = { 153, 153, 0 };
 
 //light colors
 
@@ -551,9 +571,9 @@ void GetClasses(ItemClient* pItem, std::vector<int>& vVector) {
 	bool foundMatch = false;
 	for (int num = 0; num < TotalPlayerClasses; num++) {
 		if (cmp & (1 << num)) {
-			int tmp = num + 1;
+			int tmp = num;
 			vVector.emplace_back(tmp);
-			//Can output all the races like this.
+			//Can output all the classes like this.
 			//WriteChatf("%s", pEverQuest->GetClassThreeLetterCode(tmp));
 		}
 	}
@@ -682,6 +702,34 @@ bool MatchesItemType(ItemClient* pItem) {
 	return true;
 }
 
+bool MatchesAugSlots(ItemClient* pItem) {
+	if (!pItem)
+		return false;
+
+	ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef)
+		return false;
+
+	if (pItemDef->AugData.Sockets) {
+		for (int i = 0; i <= MAX_AUG_SOCKETS; i++) {
+			if (pItemDef->AugData.Sockets[i].bVisible) {
+				/*pItemDef->AugData.Sockets[i].Type == option.ID*/
+				ItemClient* pAug = pItem->GetHeldItem(i);
+				if (!pAug)
+					continue;
+
+				ItemDefinition* pAugDef = pAug->GetItemDefinition();
+				if (!pAugDef)
+					continue;
+
+				WriteChatf("\ap%s\ax in aug slot: \ay%d\ax has aug: \a-t%s", pItemDef->Name, i, pAugDef->Name);
+			}
+		}
+	}
+
+	return true;
+}
+
 bool DoesItemMatchFilters(ItemClient* pItem) {
 	if (!pItem) {
 		return false;
@@ -734,6 +782,16 @@ bool DoesItemMatchFilters(ItemClient* pItem) {
 		return false;
 	}
 
+	if (!MatchesAugSlots(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesAugType(pItem)", pItemDef->Name);
+#endif
+		return false;
+	}
+
+#ifdef DEBUGGING
+	WriteChatf("\ap%s \agpassed all filters!", pItemDef->Name);
+#endif
 	return true;
 }
 
@@ -743,7 +801,7 @@ bool DoesItemMatchFilters(ItemClient* pItem) {
  */
 bool ShowMQFindItemWndWindow = true;
 bool bItemsPopulated = false;
-std::vector<std::string> vItemList;
+std::vector<ItemClient*> vItemList;
 void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
 /**
  * @fn InitializePlugin
@@ -876,21 +934,59 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::SameLine();
 	ImGui::BeginChild("##FindItemResults", ImVec2(0, 0), ImGuiChildFlags_Borders);
 
+		static std::shared_ptr<CTextureAnimation> pTAItemIcon;
+
+		if (!pTAItemIcon) {
+			pTAItemIcon = std::make_shared<CTextureAnimation>();
+			if (CTextureAnimation* temp = pSidlMgr->FindAnimation("A_DragItem"))
+				pTAItemIcon = std::make_unique<CTextureAnimation>(*temp);
+		}
+
+
 		static int item_current_idx = 0;
 		if (ImGui::BeginListBox("##Results", ImGui::GetContentRegionAvail())) {
 			for (size_t i = 0; i < vItemList.size(); i++) {
 				ImGui::PushID(i);
-					const bool is_selected = (item_current_idx == i);
+				const bool is_selected = (item_current_idx == i);
 
-				if (ImGui::Selectable(vItemList.at(i).c_str(), is_selected)) {
+				if (!vItemList.at(i))
+					continue;
+
+				ItemDefinition* pItemDef = vItemList.at(i)->GetItemDefinition();
+				if (!pItemDef)
+					continue;
+
+
+				if (pTAItemIcon) {
+					static const int iEQItemOffset = 500;
+					static const int iEQItemAltOffset = 336;
+					int iIconID = vItemList.at(i)->GetIconID();
+					pTAItemIcon->SetCurCell(iIconID ? iIconID - iEQItemOffset : iEQItemAltOffset);
+					mq::imgui::DrawTextureAnimation(pTAItemIcon.get(), CXSize(25, 25), true);
+					ImGui::SameLine();
+				}
+
+
+
+				if (imgui::ItemLinkText(vItemList.at(i)->GetName(), GetColorForChatColor(USERCOLOR_LINK))) {
+					char ItemLinkText[512] = { 0 };
+					FormatItemLink(ItemLinkText, 512, vItemList.at(i));
+					TextTagInfo info = ExtractLink(ItemLinkText);
+					ExecuteTextLink(info);
 					item_current_idx = static_cast<int>(i);
 				}
+
+				//if (ImGui::Selectable(vItemList.at(i)->GetName(), is_selected)) {
+
+				//}
 
 				//Write the tooltip.
 				if (ImGui::IsItemHovered()) {
 					ImGui::BeginTooltip();
 					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-					ImGui::TextUnformatted(vItemList.at(i).c_str());
+
+					ImGui::TextUnformatted(vItemList.at(i)->GetName());
+					//ImGui::TextUnformatted(vItemList.at(i).c_str());
 					ImGui::PopTextWrapPos();
 					ImGui::EndTooltip();
 				}
@@ -999,7 +1095,8 @@ void OutPutItemDetails(ItemClient* pItem) {
 	}
 
 	if (DoesItemMatchFilters(pItem)) {
-		vItemList.emplace_back(pItemDef->Name);
+
+		vItemList.emplace_back(pItem);
 	}
 
 	//If an item is a container
