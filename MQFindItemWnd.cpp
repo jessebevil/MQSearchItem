@@ -912,11 +912,11 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
 		//Reset all the options to false.
 		if (ImGui::Button("Reset Options")) {
-				for (auto& [type, data] : MenuData) {
-					for (auto& opt : data.OptionList) {
-						opt.IsSelected = false;
-					}
+			for (auto& [type, data] : MenuData) {
+				for (auto& opt : data.OptionList) {
+					opt.IsSelected = false;
 				}
+			}
 		}
 
 
