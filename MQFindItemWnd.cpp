@@ -358,16 +358,16 @@ std::map<OptionType, DropDownOption> MenuData = {
 			Option("Brass Instruments", ItemType_Brass_Instruments),
 			Option("Charm", ItemType_Charm),
 			Option("Coin", ItemType_Ticket),
-#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe emu specific?
+#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe live specific?
 			Option("Collectible", ItemType_Collectible),
 #endif
 			Option("Combinable", ItemType_Combinable),
 			Option("Compass", ItemType_Compass),
-#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses
+#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe live specific?
 			Option("Container", ItemType_Container),
 #endif
 			Option("Drink", ItemType_Drink),
-#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses
+#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses. We'll need to check this manually.
 			Option("Focus Effect", ItemType_Focus_Effect),
 #endif
 			Option("Food", ItemType_Food),
@@ -542,7 +542,6 @@ bool MatchesRaces(ItemClient* pItem) {
 
 	if (anyRaceSelected) {
 		int cmp = GetItemFromContents(pItem)->Races;
-		bool foundMatch = false;
 		std::vector<int> Races;
 		GetRaces(pItem, Races);
 		for (auto& option : raceData) {
@@ -550,13 +549,13 @@ bool MatchesRaces(ItemClient* pItem) {
 				//Check if the race is found by Option.ID
 				auto it = std::find(Races.begin(), Races.end(), option.ID);
 				if (it != Races.end()) {
-					foundMatch = true;
-					break;//If one of the races is found, we don't need to check any others.
+					//Any debug logic before the true.
+					return true;//If one of the races is found, we don't need to check any others.
 				}
 			}
 		}
 
-		return foundMatch;
+
 	}
 
 	return true;
@@ -1119,63 +1118,9 @@ void OutPutItemDetails(ItemClient* pItem) {
 	*/
 
 
-
-
-	if (pItem->GetType()) {//uint8_t
-		WriteChatf("Type: pItem->GetType() %u", pItem->GetType());
-	}
-
-	//Is Armor Type?? Perhaps we'll be able to search for Chain, Plate, Cloth etc?
-	///*0x0f0*/ int                   ArmorType;
-	if (pItem->ArmorType) {
-		WriteChatf("ArmorType: %d", pItem->ArmorType);
-	}
-
-	///*0x00c*/ int                   AugFlag;
-	if (pItem->AugFlag) {
-		//This is an aug?
-		WriteChatf("AugFlag: %d", pItem->AugFlag);
-	}
-
-	//Has value?
-	///*0x028*/ int                   Price;
-	if (pItem->Price) {
-		WriteChatf("Price: %d", pItem->Price);
-	}
-
-	///*0x074*/ bool                  bRealEstateItemPlaceable;
-	if (pItem->bRealEstateItemPlaceable) {
-		WriteChatf("Realestate Placeable");
-	}
-
-	//Is NoDrop?
-	///*0x080*/ int                   NoDropFlag;
-	if (pItem->NoDropFlag) {
-		//Sort out the int for this flag. Determine if we're on a free loot server etc?
-		WriteChatf("NoDropFlag: %d", pItem->NoDropFlag);
-	}
-
-	//Is Ornamentation?
-	///*0x084*/ int                   OrnamentationIcon;
-	if (pItem->OrnamentationIcon) {
-		WriteChatf("OrnamentationIcon: %d", pItem->OrnamentationIcon);
-	}
-
 	//StackCount - This is how many are in a stack.
 	if (pItem->IsStackable() && pItem->StackCount) {
 		WriteChatf("Stackable to: %d Currently contains: %d", pItemDef->StackSize, pItem->StackCount);
-	}
-
-	//This is if it can be stacked.
-	/*if (pItem->IsStackable()) {
-
-	}*/
-
-	//Evolving Items
-	///*0x10c*/ bool                  IsEvolvingItem;
-	if (pItem->IsEvolvingItem) {
-		//bool converted to const char array, int, int, double
-		WriteChatf("Evolving Item Status: %s Level: %d/%d Exp: %2.2f", (pItem->EvolvingExpOn ? "On" : "Off"), pItem->EvolvingCurrentLevel, pItem->EvolvingMaxLevel, pItem->EvolvingExpPct);
 	}
 
 	for (uint8_t i = eqlib::ItemSpellType_Clicky; i < ItemSpellType_Max; i++) {
