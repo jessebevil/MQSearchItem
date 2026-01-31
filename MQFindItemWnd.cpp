@@ -204,7 +204,7 @@ enum PrestigeID {
 #endif
 
 enum AugSlotID {
-	Aug_1,
+	Aug_1 = 1,
 	Aug_2,
 	Aug_3,
 	Aug_4,
@@ -367,10 +367,6 @@ std::map<OptionType, DropDownOption> MenuData = {
 #endif
 			Option("Combinable", ItemType_Combinable),
 			Option("Container", ItemType_Container),
-			Option("Compass", ItemType_Compass),
-#if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe live specific?
-			Option("Container", ItemType_Container),
-#endif
 			Option("Drink", ItemType_Drink),
 			Option("Fishing Pole", ItemType_FishingPole),
 			Option("Fishing Bait", ItemType_FishingBait),
@@ -541,17 +537,17 @@ bool IsAnySelected(const std::vector<Option>& OptionData) {
 	return false;
 }
 
-void GetRaces(ItemClient* pItem, std::vector<int>& vVector) {
-	if (!pItem)
-		return;
-
-	int cmp = GetItemFromContents(pItem)->Races;
-	for (int num = 0; num < NUM_RACES; num++) {
-		if (cmp & (1 << num)) {
-			int tmp = num + 1;
-			vVector.emplace_back(tmp);
-			//Can output all the races like this.
-			//WriteChatf("%s", pEverQuest->GetRaceDesc(tmp));
+void GetMaskedValues(int MaskedValue, int MaxLoop, std::vector<int>& vOutVector) {
+	for (int i = 0; i < MaxLoop; i++) {
+		if (MaskedValue & (1 << i)) {
+			switch (MaxLoop) {
+				case TotalPlayerClasses:
+					break;
+				default:
+					i++;//Offset by 1
+					break;
+			}
+			vOutVector.emplace_back(i);
 		}
 	}
 }
@@ -565,9 +561,8 @@ bool MatchesRaces(ItemClient* pItem) {
 	bool anyRaceSelected = IsAnySelected(raceData);
 
 	if (anyRaceSelected) {
-		int cmp = GetItemFromContents(pItem)->Races;
 		std::vector<int> Races;
-		GetRaces(pItem, Races);
+		GetMaskedValues(GetItemFromContents(pItem)->Races, NUM_RACES, Races);
 		for (auto& option : raceData) {
 			if (option.IsSelected) {
 				//Check if the race is found by Option.ID
@@ -585,22 +580,6 @@ bool MatchesRaces(ItemClient* pItem) {
 	return true;
 }
 
-void GetClasses(ItemClient* pItem, std::vector<int>& vVector) {
-	if (!pItem)
-		return;
-
-	int cmp = GetItemFromContents(pItem)->Classes;
-	bool foundMatch = false;
-	for (int num = 0; num < TotalPlayerClasses; num++) {
-		if (cmp & (1 << num)) {
-			int tmp = num;
-			vVector.emplace_back(tmp);
-			//Can output all the classes like this.
-			//WriteChatf("%s", pEverQuest->GetClassThreeLetterCode(tmp));
-		}
-	}
-}
-
 bool MatchesClasses(ItemClient* pItem) {
 	if (!pItem) {
 		return false;
@@ -612,7 +591,7 @@ bool MatchesClasses(ItemClient* pItem) {
 	if (anyClassSelected) {
 		bool foundMatch = false;
 		std::vector<int> Classes;
-		GetClasses(pItem, Classes);
+		GetMaskedValues(GetItemFromContents(pItem)->Classes, TotalPlayerClasses, Classes);
 		for (auto& option : classData) {
 			if (option.IsSelected) {
 				auto it = std::find(Classes.begin(), Classes.end(), option.ID);
@@ -629,21 +608,6 @@ bool MatchesClasses(ItemClient* pItem) {
 	return true;
 }
 
-void GetSlots(ItemClient* pItem, std::vector<int>& vVector) {
-	if (!pItem)
-		return;
-
-	int cmp = GetItemFromContents(pItem)->EquipSlots;
-	bool foundMatch = false;
-	for (int i = 0; i < NUM_WORN_ITEMS; i++) {
-		if (cmp & (1 << i)) {
-			vVector.emplace_back(i);
-			//Can output all the equippable slots like this.
-			//WriteChatf("\a-tWorn Slot for: %s -> [%d]: %s", pItem->GetItemDefinition()->Name, i, szItemSlot[i]);
-		}
-	}
-}
-
 bool MatchesSlots(ItemClient* pItem) {
 	if (!pItem) {
 		return false;
@@ -655,7 +619,7 @@ bool MatchesSlots(ItemClient* pItem) {
 	if (anySlotSelected) {
 		bool foundMatch = false;
 		std::vector<int> Slots;
-		GetSlots(pItem, Slots);
+		GetMaskedValues(GetItemFromContents(pItem)->EquipSlots, NUM_WORN_ITEMS, Slots);
 		for (auto& option : slotData) {
 			if (option.IsSelected) {
 				//WriteChatf("Option: %s selected", option.Name);
@@ -756,15 +720,29 @@ bool MatchesAugSlots(ItemClient* pItem) {
 	if (!pItemDef)
 		return false;
 
-	auto& itemTypeData = MenuData[OptionType_AugSlots].OptionList;
-	bool anySlotSelected = IsAnySelected(itemTypeData);
+	auto& augSlotData = MenuData[OptionType_AugSlots].OptionList;
+	bool anySlotSelected = IsAnySelected(augSlotData);
 
 	if (anySlotSelected && pItemDef->AugData.Sockets) {
-		if (!pItem->IsContainer()) {
-			std::vector<int> AugSlots;
-			//GetAugSlots(pItem, AugSlots);
-			//return true or false?
+		bool foundmatch = false;//We'll exlude automatically any item that isn't an augmentation.
+		//At least on EMU - Containers return that they are augmentation type sometimes.
+		if (pItem->GetItemClass() == ItemType_Augmentation && !pItem->IsContainer()) {
+			std::vector<int> vFitsSlots;
+			GetMaskedValues(GetItemFromContents(pItem)->AugType, 21, vFitsSlots);
+			for (auto& option : augSlotData) {
+				if (option.IsSelected) {
+					auto it = std::find(vFitsSlots.begin(), vFitsSlots.end(), option.ID);
+					if (it != vFitsSlots.end()) {
+						//Verify accuracy with the following output
+						//WriteChatf("pItem: \ap%s\ax Fits in Socket: %d", pItemDef->Name, *it);
+						foundmatch = true;//Doesn't fit in slot selected.
+						break;//only needs to match one option.
+					}
+				}
+			}
 		}
+
+		return foundmatch;
 	}
 
 	return true;
