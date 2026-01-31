@@ -12,6 +12,8 @@ PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
 //#define DEBUGGING
 
+void OutPutItemDetails(ItemClient* pItem);
+
 struct Option {
 	std::string Name;
 	bool IsSelected = false;
@@ -107,64 +109,64 @@ enum ClassID {
 };
 
 enum ItemTypeID {
-	ItemType_1H_Slashing,
-	ItemType_2H_Slashing,
-	ItemType_1H_Piercing,
-	ItemType_1H_Blunt,
-	ItemType_2H_Blunt,
-	ItemType_Bow,
-	ItemType_Crossbow,
-	ItemType_Throwing,
-	ItemType_Shield,
-	ItemType_Spell,
-	ItemType_Armor,
-	ItemType_Misc,
-	ItemType_Lockpicks,
-	ItemType_Fist,
-	ItemType_Food,
-	ItemType_Drink,
-	ItemType_Light,
-	ItemType_Combinable,
-	ItemType_Bandage,
-	ItemType_Ammo,
-	ItemType_Scroll,
-	ItemType_Potion,
-	ItemType_Skill,
-	ItemType_Wind_Instrument,
-	ItemType_Stringed_Instrument,
-	ItemType_Brass_Instruments,
-	ItemType_Percussion_Instrument,
-	ItemType_Arrow,
-	ItemType_Bolt,//Crossbow Ammo
-	ItemType_Jewelry,
-	ItemType_Artifact,
-	ItemType_Book,
-	ItemType_Note,
-	ItemType_Key,
-	ItemType_Ticket,
-	ItemType_2H_Piercing,
-	ItemType_FishingPole,
-	ItemType_FishingBait,
-	ItemType_Alcohol,
-	ItemType_House_Key,
-	ItemType_Compass,
-	ItemType_Metal_Key,
-	ItemType_Poison,
-	ItemType_MagicArrow,
-	ItemType_MagicBolt,
-	ItemType_Martial,
+	ItemType_1H_Slashing,//
+	ItemType_2H_Slashing,//
+	ItemType_1H_Piercing,//
+	ItemType_1H_Blunt,//
+	ItemType_2H_Blunt,//
+	ItemType_Bow,//
+	ItemType_Crossbow,//Won't Add to filters - Seems pointless?
+	ItemType_Throwing,//
+	ItemType_Shield,//
+	ItemType_Spell,//Test Me
+	ItemType_Armor,//
+	ItemType_Misc,//
+	ItemType_Lockpicks,//Test Me
+	ItemType_Fist,//Test Me
+	ItemType_Food,//
+	ItemType_Drink,//
+	ItemType_Light,//Not searching for this - Kinda pointless (but it does work)
+	ItemType_Combinable,//
+	ItemType_Bandage,//
+	ItemType_Ammo,//
+	ItemType_Scroll,//Test Me
+	ItemType_Potion,//
+	ItemType_Skill,//Test Me
+	ItemType_Wind_Instrument,//
+	ItemType_Stringed_Instrument,//
+	ItemType_Brass_Instruments,//
+	ItemType_Percussion_Instrument,//
+	ItemType_Arrow,//
+	ItemType_Bolt,//Crossbow Ammo - Not searching for this.
+	ItemType_Jewelry,//
+	ItemType_Artifact,//Test Me
+	ItemType_Book,//
+	ItemType_Note,//Test Me
+	ItemType_Key,//
+	ItemType_Ticket,// - No idea what this is for? Perhaps Shadowhaven gamble ticket?
+	ItemType_2H_Piercing,//
+	ItemType_FishingPole,//Test Me
+	ItemType_FishingBait,//Test Me
+	ItemType_Alcohol,//
+	ItemType_House_Key,//Test Me - No Idea what it matches
+	ItemType_Compass,//Works, but pretty pointless.
+	ItemType_Metal_Key,//Test Me - Again, no idea what it matches
+	ItemType_Poison,//Test Me
+	ItemType_MagicArrow,//Test Me
+	ItemType_MagicBolt,//Not going to use this one.
+	ItemType_Martial,//
 	ItemType_NotReal_HasEffects,
 	ItemType_NotReal_Haste_Item,
 	ItemType_NotReal_Has_FT,
 	ItemType_NotReal_HasFocus,
-	ItemType_Singing_Instrument,
-	ItemType_All_Instrument,
-	ItemType_Charm,
-	ItemType_ArmorDye,
-	ItemType_Augmentation,
-	ItemType_AugDestroySolvent,
-	ItemType_AugRemoveSolvent,
-	ItemType_AltAbility,
+	ItemType_Singing_Instrument,//
+	ItemType_All_Instrument,//Test Me - Singing Short Sword?
+	ItemType_Charm,//
+	ItemType_ArmorDye,//
+	ItemType_Augmentation,//
+	ItemType_AugDestroySolvent,//
+	ItemType_AugRemoveDistiller,//
+	ItemType_AltAbility,//Ancient Cloak of Flames? - Maybe doesn't apply to emu.
 	ItemType_GuildBanner,
 	ItemType_BannerModifyToken,
 	ItemType_RecipeBook,
@@ -342,39 +344,49 @@ std::map<OptionType, DropDownOption> MenuData = {
 			Option("2H Piercing", ItemType_2H_Piercing),
 			Option("2H Slashing", ItemType_2H_Slashing),
 			Option("Alcohol", ItemType_Alcohol),
+			Option("Alternate Ability", ItemType_AltAbility),
 			Option("Alternate Currency", ItemType_PointCurrency),
 			//Option("All Effects", ItemType_All_Effects),//We'll need to review how to implement
 			Option("Ammo", ItemType_Ammo),
 			Option("Armor", ItemType_Armor),
 			Option("Armor Dye", ItemType_ArmorDye),
 			Option("Arrow", ItemType_Arrow),
-			Option("Aug Distiller", ItemType_AugDestroySolvent),
+			Option("Artifact", ItemType_Artifact),
+			Option("Aug Distiller (Remove)", ItemType_AugRemoveDistiller),
 			Option("Augmentation", ItemType_Augmentation),
-			Option("Aug Solvent", ItemType_AugRemoveSolvent),
+			Option("Aug Solvent (Destroy)", ItemType_AugDestroySolvent),
 			Option("Bandage", ItemType_Bandage),
 			Option("Banner", ItemType_GuildBanner),
 			Option("Book", ItemType_Book),
 			Option("Bow", ItemType_Bow),
 			Option("Brass Instruments", ItemType_Brass_Instruments),
 			Option("Charm", ItemType_Charm),
-			Option("Coin", ItemType_Ticket),
+			Option("Token/Ticket", ItemType_Ticket),
 #if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe live specific?
 			Option("Collectible", ItemType_Collectible),
 #endif
 			Option("Combinable", ItemType_Combinable),
+			Option("Container", ItemType_Container),
 			Option("Compass", ItemType_Compass),
 #if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses Maybe live specific?
 			Option("Container", ItemType_Container),
 #endif
 			Option("Drink", ItemType_Drink),
+			Option("Fishing Pole", ItemType_FishingPole),
+			Option("Fishing Bait", ItemType_FishingBait),
 #if (!IS_EMU_CLIENT)//Exceeds 70 entries in szItemClasses. We'll need to check this manually.
 			Option("Focus Effect", ItemType_Focus_Effect),
 #endif
 			Option("Food", ItemType_Food),
+			Option("House Key", ItemType_House_Key),
+			Option("Instrument - All", ItemType_All_Instrument),
 			Option("Jewelry", ItemType_Jewelry),
 			Option("Key", ItemType_Key),
-			Option("Light", ItemType_Light),
+			Option("Lockpicks", ItemType_Lockpicks),
+			/*Option("Light", ItemType_Light),//Never saw the point in having this option.*/
+			Option("Magic Arrow", ItemType_MagicArrow),
 			Option("Martial", ItemType_Martial),
+			Option("Metal Key", ItemType_Metal_Key),
 			Option("Misc", ItemType_Misc),
 			Option("Note", ItemType_Note),
 			Option("Percussion Instrument", ItemType_Percussion_Instrument),
@@ -382,12 +394,15 @@ std::map<OptionType, DropDownOption> MenuData = {
 #if (!IS_EMU_CLIENT)
 			Option("Placeable", ItemType_Placeable),
 #endif
+			Option("Poison", ItemType_Poison),
 			Option("Potion", ItemType_Potion),
-			/*Option("Scroll", ItemType_Scroll),*/
+			Option("Scroll", ItemType_Scroll),
 			Option("Shield", ItemType_Shield),
+			Option("Spell", ItemType_Spell),
+			Option("Skill", ItemType_Skill),
 			Option("Stringed Instrument", ItemType_Stringed_Instrument),
 			Option("Throwing", ItemType_Throwing),
-			Option("Wind Instrument", ItemType_Wind_Instrument)
+			Option("Wind Instrument", ItemType_Wind_Instrument),
 	} } },
 
 #if (!IS_EMU_CLIENT)
@@ -495,6 +510,15 @@ void PopulateListBoxes() {
 				//If it's clicked, it toggles its own bool directly
 				if (ImGui::Selectable(opt.Name.c_str(), opt.IsSelected)) {
 					opt.IsSelected = !opt.IsSelected;
+				}
+
+				//Write the tooltip.
+				if (ImGui::IsItemHovered()) {
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextUnformatted(opt.Name.c_str());
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
 				}
 			}
 			ImGui::EndListBox();
@@ -665,15 +689,39 @@ bool MatchesItemType(ItemClient* pItem) {
 
 	if (anySlotSelected) {
 		bool foundMatch = false;
+#ifdef DEBUGGING
+		//Only needed for output when debugging. Otherwise we'd just return true when we found a match.
 		int currentoption = 0;
+#endif
 		const uint8_t ItemType = pItem->GetItemClass();
 		for (auto& option : itemTypeData) {
 			if (option.IsSelected) {
+#ifdef DEBUGGING
 				currentoption = option.ID;
-				if (ItemType == option.ID) {
-					foundMatch = true;
-					break;
+#endif
+
+				switch (option.ID) {
+					//Special consideration ItemTypes - where the results don't produce anything or as expected.
+					//We also can use this for custom entries - like "clickies"
+
+					case ItemType_Container://This actually doesn't produce all containers without this logic.
+						if (pItem->IsContainer()) {
+							foundMatch = true;
+						}
+
+						break;
+
+					default://By default we just want to check everything here.
+						if (ItemType == option.ID) {
+							foundMatch = true;
+						}
+
+						break;
 				}
+			}
+
+			if (foundMatch) {//We found a match - leave the for loop
+				break;
 			}
 		}
 
@@ -708,20 +756,14 @@ bool MatchesAugSlots(ItemClient* pItem) {
 	if (!pItemDef)
 		return false;
 
-	if (pItemDef->AugData.Sockets) {
-		for (int i = 0; i <= MAX_AUG_SOCKETS; i++) {
-			if (pItemDef->AugData.Sockets[i].bVisible) {
-				/*pItemDef->AugData.Sockets[i].Type == option.ID*/
-				ItemClient* pAug = pItem->GetHeldItem(i);
-				if (!pAug)
-					continue;
+	auto& itemTypeData = MenuData[OptionType_AugSlots].OptionList;
+	bool anySlotSelected = IsAnySelected(itemTypeData);
 
-				ItemDefinition* pAugDef = pAug->GetItemDefinition();
-				if (!pAugDef)
-					continue;
-
-				WriteChatf("\ap%s\ax in aug slot: \ay%d\ax has aug: \a-t%s", pItemDef->Name, i, pAugDef->Name);
-			}
+	if (anySlotSelected && pItemDef->AugData.Sockets) {
+		if (!pItem->IsContainer()) {
+			std::vector<int> AugSlots;
+			//GetAugSlots(pItem, AugSlots);
+			//return true or false?
 		}
 	}
 
@@ -1083,6 +1125,29 @@ PLUGIN_API void OnUnloadPlugin(const char* Name)
 	// DebugSpewAlways("MQFindItemWnd::OnUnloadPlugin(%s)", Name);
 }
 
+void GetContainedAugs(ItemClient* pItem) {
+	if (!pItem)
+		return;
+
+	if (pItem->IsContainer()) {
+		return;
+	}
+
+	ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef)
+		return;
+
+	for (int i = 0; i <= MAX_AUG_SOCKETS; i++) {
+		if (pItemDef->AugData.Sockets[i].bVisible) {
+			ItemClient* pAug = pItem->GetHeldItem(i);
+			if (!pAug)
+				continue;
+
+			OutPutItemDetails(pAug);
+		}
+	}
+}
+
 void OutPutItemDetails(ItemClient* pItem) {
 	if (!pItem) {
 		return;
@@ -1093,12 +1158,13 @@ void OutPutItemDetails(ItemClient* pItem) {
 		return;
 	}
 
+#ifdef DEBUGGING
 	if (pItem->GetItemClass() == ItemClass_None) {
 		WriteChatf("\arItemClass_None found on \ap%s", pItemDef->Name);
 	}
+#endif
 
 	if (DoesItemMatchFilters(pItem)) {
-
 		vItemList.emplace_back(pItem);
 	}
 
@@ -1106,16 +1172,26 @@ void OutPutItemDetails(ItemClient* pItem) {
 	if (pItem->IsContainer()) {//bool
 		for (ItemClient* ContainerItem : pItem->Contents) {
 			if (ContainerItem) {
-				OutPutItemDetails(ContainerItem);//Recursive call - bad idea?
+				OutPutItemDetails(ContainerItem);
 			}
 		}
 	}
+
+	//Gets augs currently socketed in items.
+	GetContainedAugs(pItem);
 
 	return;
 
 	/*Everyting below this return in this function
 	* is a search for information and will be purged eventually
 	*/
+
+	//Evolving Items
+	///*0x10c*/ bool                  IsEvolvingItem;
+	if (pItem->IsEvolvingItem) {
+		//bool converted to const char array, int, int, double
+		WriteChatf("Evolving Item Status: %s Level: %d/%d Exp: %2.2f", (pItem->EvolvingExpOn ? "On" : "Off"), pItem->EvolvingCurrentLevel, pItem->EvolvingMaxLevel, pItem->EvolvingExpPct);
+	}
 
 
 	//StackCount - This is how many are in a stack.
