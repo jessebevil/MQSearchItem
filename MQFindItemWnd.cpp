@@ -45,7 +45,7 @@ enum LocationID {
 };
 
 enum SlotID {
-	Slot_Charm,
+	Slot_Charm = 1,
 	Slot_LeftEar,
 	Slot_Head,
 	Slot_Face,
