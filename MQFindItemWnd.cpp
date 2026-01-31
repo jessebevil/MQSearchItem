@@ -90,7 +90,7 @@ enum RaceID {
 };
 
 enum ClassID {
-	Class_Warrior,
+	Class_Warrior = 1,
 	Class_Cleric,
 	Class_Paladin,
 	Class_Ranger,
@@ -432,6 +432,7 @@ std::map<OptionType, DropDownOption> MenuData = {
 };
 
 const char* szPlayerClasses[] = {
+	"None"
 	"Warrior",//1
 	"Cleric",//2
 	"Paladin"//3
@@ -540,13 +541,7 @@ bool IsAnySelected(const std::vector<Option>& OptionData) {
 void GetMaskedValues(int MaskedValue, int MaxLoop, std::vector<int>& vOutVector) {
 	for (int i = 0; i < MaxLoop; i++) {
 		if (MaskedValue & (1 << i)) {
-			switch (MaxLoop) {
-				case TotalPlayerClasses:
-					break;
-				default:
-					i++;//Offset by 1
-					break;
-			}
+			i++;//Offset by 1
 			vOutVector.emplace_back(i);
 		}
 	}
