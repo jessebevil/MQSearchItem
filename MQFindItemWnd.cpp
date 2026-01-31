@@ -556,6 +556,7 @@ bool MatchesRaces(ItemClient* pItem) {
 	bool anyRaceSelected = IsAnySelected(raceData);
 
 	if (anyRaceSelected) {
+		bool matchfound = false;
 		std::vector<int> Races;
 		GetMaskedValues(GetItemFromContents(pItem)->Races, NUM_RACES, Races);
 		for (auto& option : raceData) {
@@ -564,12 +565,13 @@ bool MatchesRaces(ItemClient* pItem) {
 				auto it = std::find(Races.begin(), Races.end(), option.ID);
 				if (it != Races.end()) {
 					//Any debug logic before the true.
-					return true;//If one of the races is found, we don't need to check any others.
+					WriteChatf("\ap%s\ax matches RaceID: %d OptionID: %d", pItem->GetItemDefinition()->Name, *it, option.ID);
+					matchfound = true;//If one of the races is found, we don't need to check any others.
 				}
 			}
 		}
 
-
+		return matchfound;
 	}
 
 	return true;
