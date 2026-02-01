@@ -5,6 +5,8 @@
 // are shown below. Remove the ones your plugin does not use.  Always use Initialize
 // and Shutdown for setup and cleanup.
 
+// ReSharper disable CppClangTidyReadabilityEnumInitialValue
+// ReSharper disable CppClangTidyBugproneBranchClone
 #include <mq/Plugin.h>
 #include <mq/imgui/Widgets.h>
 
@@ -12,13 +14,13 @@ PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
 //#define DEBUGGING
 
-void OutPutItemDetails(ItemClient* pItem);
+static void OutPutItemDetails(ItemClient* pItem);
 
 struct Option {
 	std::string Name;
 	bool IsSelected = false;
 	int ID;
-	Option(std::string Name, int ID) :Name(Name), ID(ID) {}
+	Option(std::string Name, const int ID) :Name(std::move(Name)), ID(ID) {}
 };
 
 /*
@@ -30,7 +32,7 @@ struct Option {
 * then change the order in the std::map<OptionType, DropDownOption> MenuData
 */
 
-enum LocationID {
+enum LocationID : uint8_t {
 	Loc_Bank,
 	Loc_Shared_Bank,
 	Loc_Equipped,
@@ -44,7 +46,7 @@ enum LocationID {
 #endif
 };
 
-enum SlotID {
+enum SlotID : uint8_t {
 	Slot_Charm = 1,
 	Slot_LeftEar,
 	Slot_Head,
@@ -70,8 +72,116 @@ enum SlotID {
 	Slot_Ammo,
 };
 
-enum RaceID {
-	Race_Human,
+void TestFunc(ItemClient* pItem) {
+	// ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	//
+	// pItemDef->Cost;
+	// //pItemDef->eGMRequirement;
+	// pItemDef->bPoofOnDeath;
+
+#if (IS_EXPANSION_LEVEL(EXPANSION_LEVEL_SOR))
+	pItemDef->Collectible;
+#endif
+
+	// /*Is instrument?*/
+	// pItemDef->InstrumentType;
+	// pItemDef->InstrumentMod;
+	//
+	// /*Should we add a diety filter?*/
+	// pItemDef->Deity;//Definitely going to be bitmasked
+	//
+	// /*To search for magic items*/
+	// pItemDef->Magic;
+	//
+	// /*Delay maybe instead we should do ratio?*/
+	// pItemDef->Delay;
+	//
+	// pItemDef->Prestige;//This is for prestiege or not. I spelled that wrong. I know.
+	//
+	//
+	// pItemDef->ItemClass;//WTF is this?
+	//
+	// pItemDef->AugRestrictions;//We'll need to review this later - I believe it's an enum that's unmapped.
+	//
+	// //Unclear what to do with this information at the moment - Perhaps we want to find things with faction mods
+	// //Need more details
+	// pItemDef->FactionModType[0x4];
+	// pItemDef->FactionModValue[0x4];
+	// pItemDef->SpellData;//Should be used in ItemType to find items with a spell attached to it I think.
+	// pItemDef->Favor;
+	// pItemDef->GuildFavor;
+	// pItemDef->StackSize;//Going to use this for types?
+	// pItemDef->TrophyBenefitID;//Trophy - Type? Favor usage for tribute?
+
+}
+
+enum StatID : uint8_t {
+	Stat_AC,
+	Stat_Accuracy,
+	Stat_AGI,
+	Stat_Attack,
+	Stat_Attunable,
+	Stat_Avoidance,
+	Stat_BackstabDamage,
+	Stat_CHA,
+	Stat_Clairvoyance,
+	Stat_CombatEffects,
+	Stat_Damage,
+	Stat_DamageShield,
+	Stat_DEX,
+	Stat_DmgBonus,//Use DmgBonusValue
+	Stat_DoTShielding,
+	Stat_DSMitigation,
+	Stat_ElementalDamage,
+	Stat_Endurance,
+	Stat_EnduranceRegen,
+	Stat_Favor,
+	Stat_GuildFavor,
+	Stat_Haste,
+	Stat_HealAmount,
+	Stat_Heirloom,
+	Stat_HeroicAgi,
+	Stat_HeroicCha,
+	Stat_HeroicCorruption,
+	Stat_HeroicDex,
+	Stat_HeroicInt,
+	Stat_HeroicPoison,
+	Stat_HeroicSta,
+	Stat_HeroicStr,
+	Stat_HeroicSvCold,
+	Stat_HeroicSvDisease,
+	Stat_HeroicSvFire,
+	Stat_HeroicSvMagic,
+	Stat_HeroicWis,
+	Stat_HP,
+	Stat_HPRegen,
+	Stat_INT,
+	Stat_Mana,
+	Stat_ManaRegen,
+	Stat_Purity,
+	Stat_Range,
+	Stat_Shielding,
+	Stat_SpellDamage,
+	Stat_SpellShield,
+	Stat_STA,
+	Stat_STR,
+	Stat_StrikeThrough,
+	Stat_StunResist,
+	Stat_Summoned,//Pet items?
+	Stat_SvCold,
+	Stat_SvCorruption,
+	Stat_SvDisease,
+	Stat_SvFire,
+	Stat_SvMagic,
+	Stat_SvPoison,
+	Stat_TradeSkills,//?
+	Stat_Weight,
+	Stat_WIS,
+
+};
+
+enum RaceID : uint8_t {
+	Race_Human = 1 ,
 	Race_Barbarian,
 	Race_Erudite,
 	Race_WoodElf,
@@ -89,7 +199,7 @@ enum RaceID {
 	Race_Drakkin
 };
 
-enum ClassID {
+enum ClassID : uint8_t {
 	Class_Warrior = 1,
 	Class_Cleric,
 	Class_Paladin,
@@ -108,7 +218,7 @@ enum ClassID {
 	Class_Berserker
 };
 
-enum ItemTypeID {
+enum ItemTypeID : uint8_t {
 	ItemType_1H_Slashing,//
 	ItemType_2H_Slashing,//
 	ItemType_1H_Piercing,//
@@ -187,7 +297,13 @@ enum ItemTypeID {
 	ItemType_Container,//pItem->IsContainer
 	ItemType_Focus_Effect,//pItem->Focus stuff
 	ItemType_Placeable,//pItem->Placable
+
 //#endif
+//Should probably add these to type.
+// Option("Attunable", Stat_Attuneable),//ItemType?
+//Option("Heirloom", Stat_Heirloom),//Both relevant and not - Itemtype?
+//Option("Summoned", Stat_Summoned),//ItemType?
+//Option("Tradeskill", Stat_TradeSkills),//Probably doesn't belong here. This is an itemtype question.
 
 	//Custom Options I'm Adding perhaps:
 	//Clicky
@@ -203,7 +319,7 @@ enum PrestigeID {
 };
 #endif
 
-enum AugSlotID {
+enum AugSlotID : uint8_t {
 	Aug_1 = 1,
 	Aug_2,
 	Aug_3,
@@ -244,7 +360,7 @@ enum OptionType : uint8_t {
 	OptionType_AugSlots
 };
 
-std::map<OptionType, std::string> DropDownOptions{
+static std::map<OptionType, std::string> DropDownOptions{
 	{OptionType_Location, "Location"},
 	{OptionType_Slots, "Slots"},
 	{OptionType_Stats, "Stats"},
@@ -257,7 +373,7 @@ std::map<OptionType, std::string> DropDownOptions{
 	{OptionType_AugSlots, "AugSlots"}
 };
 
-std::map<OptionType, DropDownOption> MenuData = {
+static std::map<OptionType, DropDownOption> MenuData = {
 	{OptionType_Location, { {
 			Option("Bank", Loc_Bank),
 			Option("Shared Bank", Loc_Shared_Bank),
@@ -296,6 +412,66 @@ std::map<OptionType, DropDownOption> MenuData = {
 			Option("Waist", Slot_Waist),
 			Option("Wrist", Slot_LeftWrist),
 			//Option("Wrist2", Slot_RightWrist),
+	} } },
+
+	{ OptionType_Stats, { {
+			Option("Armor Class", Stat_AC),
+			Option("Accuracy", Stat_Accuracy),
+			Option("Agility", Stat_AGI),
+			Option("Attack", Stat_Attack),
+			Option("Avoidance", Stat_Avoidance),
+			Option("Backstab Damage", Stat_BackstabDamage),
+			Option("Charisma", Stat_CHA),
+			Option("Clairvoyance", Stat_Clairvoyance),
+			Option("Combat Effects", Stat_CombatEffects),
+			Option("Damage", Stat_Damage),
+			Option("Damage Shield", Stat_DamageShield),
+			Option("Dexterity", Stat_DEX),
+			Option("Damage Bonus", Stat_DmgBonus),
+			Option("DoT Shielding", Stat_DoTShielding),
+			Option("DS Mitigation", Stat_DSMitigation),
+			Option("Elemental Dmg", Stat_ElementalDamage),
+			Option("Endurance", Stat_Endurance),
+			Option("Endurance Regen", Stat_EnduranceRegen),
+			Option("Tribute Value", Stat_Favor),
+			Option("Guild Tribute Value", Stat_GuildFavor),
+			Option("Haste", Stat_Haste),
+			Option("Heal Amount", Stat_HealAmount),
+			Option("Heroic AGI", Stat_HeroicAgi),
+			Option("Heroic CHA", Stat_HeroicCha),
+			Option("Heroic Sv Corruption", Stat_HeroicCorruption),
+			Option("Heroic Dex", Stat_HeroicDex),
+			Option("Heroic Int", Stat_HeroicInt),
+			Option("Heroic Sv Poison", Stat_HeroicPoison),
+			Option("Heroic STA", Stat_HeroicSta),
+			Option("Heroic STR", Stat_HeroicStr),
+			Option("Heroic SvCold", Stat_HeroicSvCold),
+			Option("Heroic SvDisease", Stat_HeroicSvDisease),
+			Option("Heroic SvFire", Stat_HeroicSvFire),
+			Option("Heroic SvMagic", Stat_HeroicSvMagic),
+			Option("Heroic WIS", Stat_HeroicWis),
+			Option("Hitpoints", Stat_HP),
+			Option("HP Regen", Stat_HPRegen),
+			Option("INT", Stat_INT),
+			Option("Mana", Stat_Mana),
+			Option("Mana Regen", Stat_ManaRegen),
+			Option("Purity", Stat_Purity),
+			Option("Range", Stat_Range),
+			Option("Shielding", Stat_Shielding),
+			Option("Spell Damage", Stat_SpellDamage),
+			Option("Spell Shielding", Stat_SpellShield),
+			Option("Stamina", Stat_STA),
+			Option("Strength", Stat_STR),
+			Option("StrikeThrough", Stat_StrikeThrough),
+			Option("Stun Resist", Stat_StunResist),
+			Option("Sv Cold", Stat_SvCold),
+			Option("Sv Corruption", Stat_SvCorruption),
+			Option("Sv Disease", Stat_SvDisease),
+			Option("Sv Fire", Stat_SvFire),
+			Option("Sv Magic", Stat_SvMagic),
+			Option("Sv Poison", Stat_SvPoison),
+			Option("Weight", Stat_Weight),
+			Option("Wisdom", Stat_WIS),
 	} } },
 
 	{ OptionType_Race, { {
@@ -431,11 +607,12 @@ std::map<OptionType, DropDownOption> MenuData = {
 	} } }
 };
 
-const char* szPlayerClasses[] = {
-	"None"
+#ifdef DEBUGGING
+static const char* szPlayerClasses[] = {
+	"None",
 	"Warrior",//1
 	"Cleric",//2
-	"Paladin"//3
+	"Paladin",//3
 	"Ranger",//4
 	"Shadow Knight",//5
 	"Druid",//6
@@ -450,6 +627,7 @@ const char* szPlayerClasses[] = {
 	"Beastlord",//15
 	"Berserker"//16
 };
+#endif
 
 constexpr MQColor light_blue = { 84, 172, 210 };
 constexpr MQColor grey = { 37, 37, 37 };
@@ -485,8 +663,8 @@ static bool bOnlyShowDroppable = false;
 static bool bOnlyShowNoDrop = false;
 
 
-void PopulateListBoxes() {
-	static const ImVec2 listBoxSize = ImVec2(150, 100);
+static void PopulateListBoxes() {
+	static constexpr ImVec2 listBoxSize = ImVec2(150, 100);
 	for (auto& [type, data] : MenuData) {
 
 		//Label for this section
@@ -496,7 +674,9 @@ void PopulateListBoxes() {
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 		std::string clearBtnLabel = "Clear##" + std::to_string(type);
 		if (ImGui::SmallButton(clearBtnLabel.c_str())) {
-			for (auto& opt : data.OptionList) opt.IsSelected = false;
+			for (auto& opt : data.OptionList) {
+				opt.IsSelected = false;
+			}
 		}
 
 		//UniqueId for each listbox.
@@ -528,17 +708,13 @@ void PopulateListBoxes() {
 This will check if any of the options were selected in a category
 We can use that to determine if we should check the filters at all.
 */
-bool IsAnySelected(const std::vector<Option>& OptionData) {
-	for (auto& option : OptionData) {
-		if (option.IsSelected) {
-			return true;
-		}
-	}
-
-	return false;
+static bool IsAnySelected(const std::vector<Option>& OptionData) {
+	return std::any_of(OptionData.begin(), OptionData.end(), [](const Option& option) {
+		return option.IsSelected;
+	});
 }
 
-void GetMaskedValues(int MaskedValue, int MaxLoop, std::vector<int>& vOutVector) {
+static void GetMaskedValues(const int MaskedValue, const int MaxLoop, std::vector<int>& vOutVector) {
 	for (int i = 0; i < MaxLoop; i++) {
 		if (MaskedValue & (1 << i)) {
 			i++;//Offset by 1
@@ -547,18 +723,23 @@ void GetMaskedValues(int MaskedValue, int MaxLoop, std::vector<int>& vOutVector)
 	}
 }
 
-bool MatchesRaces(ItemClient* pItem) {
+static bool MatchesRaces(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
 	}
 
-	auto& raceData = MenuData[OptionType_Race].OptionList;
-	bool anyRaceSelected = IsAnySelected(raceData);
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+
+	const auto& raceData = MenuData[OptionType_Race].OptionList;
+	const bool anyRaceSelected = IsAnySelected(raceData);
 
 	if (anyRaceSelected) {
 		bool matchfound = false;
 		std::vector<int> Races;
-		GetMaskedValues(GetItemFromContents(pItem)->Races, NUM_RACES, Races);
+		GetMaskedValues(pItemDef->Races, NUM_RACES, Races);
 		for (auto& option : raceData) {
 			if (option.IsSelected) {
 				//Check if the race is found by Option.ID
@@ -577,18 +758,23 @@ bool MatchesRaces(ItemClient* pItem) {
 	return true;
 }
 
-bool MatchesClasses(ItemClient* pItem) {
+static bool MatchesClasses(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
 	}
 
-	auto& classData = MenuData[OptionType_Class].OptionList;
-	bool anyClassSelected = IsAnySelected(classData);
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+
+	const auto& classData = MenuData[OptionType_Class].OptionList;
+	const bool anyClassSelected = IsAnySelected(classData);
 
 	if (anyClassSelected) {
 		bool foundMatch = false;
 		std::vector<int> Classes;
-		GetMaskedValues(GetItemFromContents(pItem)->Classes, TotalPlayerClasses, Classes);
+		GetMaskedValues(pItemDef->Classes, TotalPlayerClasses, Classes);
 		for (auto& option : classData) {
 			if (option.IsSelected) {
 				auto it = std::find(Classes.begin(), Classes.end(), option.ID);
@@ -605,25 +791,30 @@ bool MatchesClasses(ItemClient* pItem) {
 	return true;
 }
 
-bool MatchesSlots(ItemClient* pItem) {
+static bool MatchesSlots(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
 	}
 
-	auto& slotData = MenuData[OptionType_Slots].OptionList;
-	bool anySlotSelected = IsAnySelected(slotData);
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+
+	const auto& slotData = MenuData[OptionType_Slots].OptionList;
+	const bool anySlotSelected = IsAnySelected(slotData);
 
 	if (anySlotSelected) {
 		bool foundMatch = false;
 		std::vector<int> Slots;
-		GetMaskedValues(GetItemFromContents(pItem)->EquipSlots, NUM_WORN_ITEMS, Slots);
+		GetMaskedValues(pItemDef->EquipSlots, NUM_WORN_ITEMS, Slots);
 		for (auto& option : slotData) {
 			if (option.IsSelected) {
 				//WriteChatf("Option: %s selected", option.Name);
 				auto it = std::find(Slots.begin(), Slots.end(), option.ID);
 				if (it != Slots.end()) {
 					foundMatch = true;
-					//WriteChatf("\a-tWorn Slot for: %s -> [%d]: %s", pItem->GetItemDefinition()->Name, *it, szItemSlot[*it]);
+					//WriteChatf("\a-tWorn Slot for: %s -> [%d]: %s", pItemDef->Name, *it, szItemSlot[*it]);
 					break;
 				}
 			}
@@ -635,7 +826,7 @@ bool MatchesSlots(ItemClient* pItem) {
 	return true;
 }
 
-bool MatchesItemType(ItemClient* pItem) {
+static bool MatchesItemType(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
 	}
@@ -645,8 +836,8 @@ bool MatchesItemType(ItemClient* pItem) {
 		return false;
 	}
 
-	auto& itemTypeData = MenuData[OptionType_ItemType].OptionList;
-	bool anySlotSelected = IsAnySelected(itemTypeData);
+	const auto& itemTypeData = MenuData[OptionType_ItemType].OptionList;
+	const bool anySlotSelected = IsAnySelected(itemTypeData);
 
 	if (anySlotSelected) {
 		bool foundMatch = false;
@@ -709,23 +900,25 @@ bool MatchesItemType(ItemClient* pItem) {
 	return true;
 }
 
-bool MatchesAugSlots(ItemClient* pItem) {
-	if (!pItem)
+static bool MatchesAugSlots(const ItemClient* pItem) {
+	if (!pItem) {
 		return false;
+	}
 
-	ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef)
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
 		return false;
+	}
 
-	auto& augSlotData = MenuData[OptionType_AugSlots].OptionList;
-	bool anySlotSelected = IsAnySelected(augSlotData);
+	const auto& augSlotData = MenuData[OptionType_AugSlots].OptionList;
+	const bool anySlotSelected = IsAnySelected(augSlotData);
 
-	if (anySlotSelected && pItemDef->AugData.Sockets) {
-		bool foundmatch = false;//We'll exlude automatically any item that isn't an augmentation.
+	if (anySlotSelected) {
+		bool foundmatch = false;//We'll exclude automatically any item that isn't an augmentation.
 		//At least on EMU - Containers return that they are augmentation type sometimes.
 		if (pItem->GetItemClass() == ItemType_Augmentation && !pItem->IsContainer()) {
 			std::vector<int> vFitsSlots;
-			GetMaskedValues(GetItemFromContents(pItem)->AugType, 21, vFitsSlots);
+			GetMaskedValues(pItemDef->AugType, 21, vFitsSlots);
 			for (auto& option : augSlotData) {
 				if (option.IsSelected) {
 					auto it = std::find(vFitsSlots.begin(), vFitsSlots.end(), option.ID);
@@ -745,7 +938,440 @@ bool MatchesAugSlots(ItemClient* pItem) {
 	return true;
 }
 
-bool DoesItemMatchFilters(ItemClient* pItem) {
+static bool MatchesStats(const ItemClient* pItem) {
+	if (!pItem) {
+		return false;
+	}
+
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+
+	const auto& statsData = MenuData[OptionType_Stats].OptionList;
+	const bool anySlotSelected = IsAnySelected(statsData);
+
+	if (anySlotSelected) {
+		int hasStatCount = 0;
+		int optioncount = 0;
+
+		for (const auto& option : statsData) {
+			if (option.IsSelected) {
+				optioncount++;
+				switch (option.ID) {
+					case Stat_AC:
+						if (pItemDef->AC) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Accuracy:
+						if (pItemDef->Accuracy) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_AGI:
+						if (pItemDef->AGI) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Attack:
+						if (pItemDef->Attack) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Avoidance:
+						if (pItemDef->Avoidance) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_BackstabDamage:
+						if (pItemDef->BackstabDamage) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_CHA:
+						if (pItemDef->CHA) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Clairvoyance:
+						if (pItemDef->Clairvoyance) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_CombatEffects:
+						if (pItemDef->CombatEffects) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Damage:
+						if (pItemDef->Damage) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_DamageShield:
+						if (pItemDef->DamShield) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_DEX:
+						if (pItemDef->DEX) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_DmgBonus:
+						if (pItemDef->DmgBonusValue) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_DoTShielding:
+						if (pItemDef->DoTShielding) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_DSMitigation:
+						if (pItemDef->DamageShieldMitigation) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_ElementalDamage:
+						if (pItemDef->ElementalDamage) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Endurance:
+						if (pItemDef->Endurance) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_EnduranceRegen:
+						if (pItemDef->EnduranceRegen) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Favor:
+						if (pItemDef->Favor) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_GuildFavor:
+						if (pItemDef->GuildFavor) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Haste:
+						if (pItemDef->Haste) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HealAmount:
+						if (pItemDef->HealAmount) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicAgi:
+						if (pItemDef->HeroicAGI) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicCha:
+						if (pItemDef->HeroicCHA) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicCorruption:
+						if (pItemDef->HeroicSvCorruption) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicDex:
+						if (pItemDef->HeroicDEX) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicInt:
+						if (pItemDef->HeroicINT) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicPoison:
+						if (pItemDef->HeroicSvPoison) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicSta:
+						if (pItemDef->HeroicSTA) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicStr:
+						if (pItemDef->HeroicSTR) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicSvCold:
+						if (pItemDef->HeroicSvCold) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicSvDisease:
+						if (pItemDef->HeroicSvDisease) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicSvFire:
+						if (pItemDef->HeroicSvFire) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicSvMagic:
+						if (pItemDef->HeroicSvMagic) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HeroicWis:
+						if (pItemDef->HeroicWIS) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_HP:
+						if (pItemDef->HP) {
+							hasStatCount++;
+						}
+
+						break;
+
+
+					case Stat_HPRegen:
+						if (pItemDef->HPRegen) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_INT:
+						if (pItemDef->INT) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Mana:
+						if (pItemDef->Mana) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_ManaRegen:
+						if (pItemDef->ManaRegen) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Purity:
+						if (pItemDef->Purity) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Range:
+						if (pItemDef->Range) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Shielding:
+						if (pItemDef->Shielding) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SpellDamage:
+						if (pItemDef->SpellDamage) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SpellShield:
+						if (pItemDef->SpellShield) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_STA:
+						if (pItemDef->STA) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_STR:
+						if (pItemDef->STR) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_StrikeThrough:
+						if (pItemDef->StrikeThrough) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_StunResist:
+						if (pItemDef->StunResist) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SvCold:
+						if (pItemDef->SvCold) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SvCorruption:
+						if (pItemDef->SvCorruption) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SvDisease:
+						if (pItemDef->SvDisease) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SvFire:
+						if (pItemDef->SvFire) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SvMagic:
+						if (pItemDef->SvMagic) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_SvPoison:
+						if (pItemDef->SvPoison) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_Weight:
+						if (pItemDef->Weight) {
+							hasStatCount++;
+						}
+
+						break;
+
+					case Stat_WIS:
+						if (pItemDef->WIS) {
+							hasStatCount++;
+						}
+
+						break;
+
+					default:
+						WriteChatf("Unaccounted for Option.ID (\ar%d\ax) in MatchesStats", option.ID);
+						break;
+				}
+			}
+		}
+		return hasStatCount == optioncount;
+	}
+
+	return true;
+}
+
+static bool DoesItemMatchFilters(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
 	}
@@ -804,6 +1430,13 @@ bool DoesItemMatchFilters(ItemClient* pItem) {
 		return false;
 	}
 
+	if (!MatchesStats(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesStats(pItem)", pItemDef->Name);
+#endif
+		return false;
+	}
+
 #ifdef DEBUGGING
 	WriteChatf("\ap%s \agpassed all filters!", pItemDef->Name);
 #endif
@@ -814,10 +1447,10 @@ bool DoesItemMatchFilters(ItemClient* pItem) {
  * Avoid Globals if at all possible, since they persist throughout your program.
  * But if you must have them, here is the place to put them.
  */
-bool ShowMQFindItemWndWindow = true;
-bool bItemsPopulated = false;
-std::vector<ItemClient*> vItemList;
-void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
+static bool ShowMQFindItemWndWindow = true;
+static bool bItemsPopulated = false;
+static std::vector<ItemClient*> vItemList;
+static void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
 /**
  * @fn InitializePlugin
  *
@@ -889,7 +1522,7 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200.0f, 150.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 9);
 	// 5 push style Var; if we add more, make sure we pop
-	const int iPushPopVar = 5;
+	static constexpr int iPushPopVar = 5;
 
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, grey.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, black.ToImU32());
@@ -906,12 +1539,12 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, black.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, black.ToImU32());
 	// 13 push style Color; if we add more, make sure we pop
-	constexpr int iPushPopColor = 13;
+	static constexpr int iPushPopColor = 13;
 #pragma endregion Styles
-	static ImGuiWindowFlags flags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoFocusOnAppearing;
+	static ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoFocusOnAppearing;
 
 	//Begin main window
-	if (!ImGui::Begin("MQFindItemWnd", &ShowMQFindItemWndWindow, ImGuiWindowFlags_MenuBar)) {
+	if (!ImGui::Begin("MQFindItemWnd", &ShowMQFindItemWndWindow, flags)) {
 		ImGui::PopStyleVar(iPushPopVar);
 		ImGui::PopStyleColor(iPushPopColor);
 		ImGui::End();
@@ -958,29 +1591,31 @@ PLUGIN_API void OnUpdateImGui() {
 
 		if (!pTAItemIcon) {
 			pTAItemIcon = std::make_shared<CTextureAnimation>();
-			if (CTextureAnimation* temp = pSidlMgr->FindAnimation("A_DragItem"))
+			if (CTextureAnimation* temp = pSidlMgr->FindAnimation("A_DragItem")) {
 				pTAItemIcon = std::make_unique<CTextureAnimation>(*temp);
+			}
 		}
 
 
-		static int item_current_idx = 0;
+		static size_t item_current_idx = 0;
 		if (ImGui::BeginListBox("##Results", ImGui::GetContentRegionAvail())) {
 			for (size_t i = 0; i < vItemList.size(); i++) {
-				ImGui::PushID(i);
+				ImGui::PushID(static_cast<int>(i));
 				const bool is_selected = (item_current_idx == i);
 
-				if (!vItemList.at(i))
+				if (!vItemList.at(i)) {
 					continue;
+				}
 
-				ItemDefinition* pItemDef = vItemList.at(i)->GetItemDefinition();
-				if (!pItemDef)
+				const ItemDefinition* pItemDef = vItemList.at(i)->GetItemDefinition();
+				if (!pItemDef) {
 					continue;
-
+				}
 
 				if (pTAItemIcon) {
-					static const int iEQItemOffset = 500;
-					static const int iEQItemAltOffset = 336;
-					int iIconID = vItemList.at(i)->GetIconID();
+					static constexpr int iEQItemOffset = 500;
+					static constexpr int iEQItemAltOffset = 336;
+					const int iIconID = vItemList.at(i)->GetIconID();
 					pTAItemIcon->SetCurCell(iIconID ? iIconID - iEQItemOffset : iEQItemAltOffset);
 					mq::imgui::DrawTextureAnimation(pTAItemIcon.get(), CXSize(25, 25), true);
 					ImGui::SameLine();
@@ -1041,82 +1676,26 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::End();
 }
 
-/**
- * @fn OnMacroStart
- *
- * This is called each time a macro starts (ex: /mac somemacro.mac), prior to
- * launching the macro.
- *
- * @param Name const char* - The name of the macro that was launched
- */
-PLUGIN_API void OnMacroStart(const char* Name)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnMacroStart(%s)", Name);
-}
-
-/**
- * @fn OnMacroStop
- *
- * This is called each time a macro stops (ex: /endmac), after the macro has ended.
- *
- * @param Name const char* - The name of the macro that was stopped.
- */
-PLUGIN_API void OnMacroStop(const char* Name)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnMacroStop(%s)", Name);
-}
-
-/**
- * @fn OnLoadPlugin
- *
- * This is called each time a plugin is loaded (ex: /plugin someplugin), after the
- * plugin has been loaded and any associated -AutoExec.cfg file has been launched.
- * This means it will be executed after the plugin's @ref InitializePlugin callback.
- *
- * This is also called when THIS plugin is loaded, but initialization tasks should
- * still be done in @ref InitializePlugin.
- *
- * @param Name const char* - The name of the plugin that was loaded
- */
-PLUGIN_API void OnLoadPlugin(const char* Name)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnLoadPlugin(%s)", Name);
-}
-
-/**
- * @fn OnUnloadPlugin
- *
- * This is called each time a plugin is unloaded (ex: /plugin someplugin unload),
- * just prior to the plugin unloading.  This means it will be executed prior to that
- * plugin's @ref ShutdownPlugin callback.
- *
- * This is also called when THIS plugin is unloaded, but shutdown tasks should still
- * be done in @ref ShutdownPlugin.
- *
- * @param Name const char* - The name of the plugin that is to be unloaded
- */
-PLUGIN_API void OnUnloadPlugin(const char* Name)
-{
-	// DebugSpewAlways("MQFindItemWnd::OnUnloadPlugin(%s)", Name);
-}
-
-void GetContainedAugs(ItemClient* pItem) {
-	if (!pItem)
+static void GetContainedAugs(const ItemClient* pItem) {
+	if (!pItem) {
 		return;
+	}
 
 	if (pItem->IsContainer()) {
 		return;
 	}
 
-	ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef)
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
 		return;
+	}
 
 	for (int i = 0; i <= MAX_AUG_SOCKETS; i++) {
 		if (pItemDef->AugData.Sockets[i].bVisible) {
 			ItemClient* pAug = pItem->GetHeldItem(i);
-			if (!pAug)
+			if (!pAug) {
 				continue;
+			}
 
 			OutPutItemDetails(pAug);
 		}
@@ -1178,8 +1757,9 @@ void OutPutItemDetails(ItemClient* pItem) {
 		eqlib::ItemSpellTypes currentType = static_cast<eqlib::ItemSpellTypes>(i);
 		if (const ItemSpellData::SpellData* pSpellData = pItemDef->GetSpellData(currentType)) {
 			EQ_Spell* pSpell = GetSpellByID(pSpellData->SpellID);
-			if (!pSpell)
+			if (!pSpell) {
 				continue;
+			}
 
 			switch (currentType) {
 				case ItemSpellType_Clicky:
@@ -1228,8 +1808,8 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 
 	vItemList.clear();//Must clear this list or every time you hit find it just adds to it.
 
-	auto& LocationData = MenuData[OptionType_Location].OptionList;
-	bool anyLocationSelected = IsAnySelected(LocationData);
+	const auto& LocationData = MenuData[OptionType_Location].OptionList;
+	const bool anyLocationSelected = IsAnySelected(LocationData);
 
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Equipped].IsSelected) {
 		for (int iWornSlot = InvSlot_FirstWornItem; iWornSlot <= InvSlot_LastWornItem; iWornSlot++) {
