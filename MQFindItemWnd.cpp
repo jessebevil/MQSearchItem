@@ -746,8 +746,9 @@ static bool MatchesRaces(const ItemClient* pItem) {
 				auto it = std::find(Races.begin(), Races.end(), option.ID);
 				if (it != Races.end()) {
 					//Any debug logic before the true.
-					WriteChatf("\ap%s\ax matches RaceID: %d OptionID: %d", pItem->GetItemDefinition()->Name, *it, option.ID);
+					//WriteChatf("\ap%s\ax matches RaceID: %d OptionID: %d", pItem->GetItemDefinition()->Name, *it, option.ID);
 					matchfound = true;//If one of the races is found, we don't need to check any others.
+					break;
 				}
 			}
 		}
@@ -1459,12 +1460,7 @@ static void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
  */
 PLUGIN_API void InitializePlugin()
 {
-	DebugSpewAlways("MQFindItemWnd::Initializing version %f", MQ2Version);
-
-	// Examples:
-	// AddCommand("/mycommand", MyCommand);
 	AddCommand("/searchitem", PopulateAllItems);
-	// AddXMLFile("MQUI_MyXMLFile.xml");
 	// AddMQ2Data("mytlo", MyTLOData);
 }
 
@@ -1478,32 +1474,7 @@ PLUGIN_API void ShutdownPlugin()
 {
 	DebugSpewAlways("MQFindItemWnd::Shutting down");
 	RemoveCommand("/searchitem");
-	// Examples:
-	// RemoveCommand("/mycommand");
-	// RemoveXMLFile("MQUI_MyXMLFile.xml");
 	// RemoveMQ2Data("mytlo");
-}
-
-
-/**
- * @fn SetGameState
- *
- * This is called when the GameState changes.  It is also called once after the
- * plugin is initialized.
- *
- * For a list of known GameState values, see the constants that begin with
- * GAMESTATE_.  The most commonly used of these is GAMESTATE_INGAME.
- *
- * When zoning, this is called once after @ref OnBeginZone @ref OnRemoveSpawn
- * and @ref OnRemoveGroundItem are all done and then called once again after
- * @ref OnEndZone and @ref OnAddSpawn are done but prior to @ref OnAddGroundItem
- * and @ref OnZoned
- *
- * @param GameState int - The value of GameState at the time of the call
- */
-PLUGIN_API void SetGameState(int GameState)
-{
-	// DebugSpewAlways("MQFindItemWnd::SetGameState(%d)", GameState);
 }
 
 PLUGIN_API void OnUpdateImGui() {
@@ -1783,20 +1754,6 @@ void OutPutItemDetails(ItemClient* pItem) {
 					WriteChatf("Unaccounted for ItemSpellType encountered i: %d", i);
 			}
 
-		}
-	}
-
-	if (pItemDef->AugData.Sockets) {
-
-	}
-
-	if (pItemDef->AugData.Sockets) {
-		for (const eqlib::ItemAugmentationSocket& augslot : pItemDef->AugData.Sockets) {
-			if (augslot.bVisible && augslot.Type != 0) {
-				//augslot.Type
-				//augslot.bInfusible
-				WriteChatf("AugSlot: %d", augslot.Type);
-			}
 		}
 	}
 }
