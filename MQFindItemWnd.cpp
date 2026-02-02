@@ -14,7 +14,7 @@ PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
 //#define DEBUGGING
 
-static void OutPutItemDetails(ItemClient* pItem);
+static void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, const char* hostName, bool isAug, int augSlotIndex);
 
 struct Option {
 	std::string Name;
@@ -72,7 +72,8 @@ enum SlotID : uint8_t {
 	Slot_Ammo,
 };
 
-void TestFunc(ItemClient* pItem) {
+#ifdef DEBUGGING
+static void TestFunc(ItemClient* pItem) {
 	// ItemDefinition* pItemDef = pItem->GetItemDefinition();
 	//
 	// pItemDef->Cost;
@@ -114,6 +115,7 @@ void TestFunc(ItemClient* pItem) {
 	// pItemDef->TrophyBenefitID;//Trophy - Type? Favor usage for tribute?
 
 }
+#endif
 
 enum StatID : uint8_t {
 	Stat_AC,
@@ -132,6 +134,7 @@ enum StatID : uint8_t {
 	Stat_DmgBonus,//Use DmgBonusValue
 	Stat_DoTShielding,
 	Stat_DSMitigation,
+	Stat_Efficiency,
 	Stat_ElementalDamage,
 	Stat_Endurance,
 	Stat_EnduranceRegen,
@@ -160,6 +163,7 @@ enum StatID : uint8_t {
 	Stat_ManaRegen,
 	Stat_Purity,
 	Stat_Range,
+	Stat_Ratio,
 	Stat_Shielding,
 	Stat_SpellDamage,
 	Stat_SpellShield,
@@ -181,7 +185,7 @@ enum StatID : uint8_t {
 };
 
 enum RaceID : uint8_t {
-	Race_Human = 1 ,
+	Race_Human = 1,
 	Race_Barbarian,
 	Race_Erudite,
 	Race_WoodElf,
@@ -197,6 +201,26 @@ enum RaceID : uint8_t {
 	Race_VahShir,
 	Race_Froglok,
 	Race_Drakkin
+};
+
+static const char* szPlayerRaces[] = {
+	"None",
+	"Human",
+	"Barbarian",
+	"Erudite",
+	"WoodElf",
+	"HighElf",
+	"DarkElf",
+	"HalfElf",
+	"Dwarf",
+	"Troll",
+	"Ogre",
+	"Halfling",
+	"Gnome",
+	"Iksar",
+	"VahShir",
+	"Froglok",
+	"Drakkin"
 };
 
 enum ClassID : uint8_t {
@@ -430,6 +454,7 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Damage Bonus", Stat_DmgBonus),
 			Option("DoT Shielding", Stat_DoTShielding),
 			Option("DS Mitigation", Stat_DSMitigation),
+			Option("Efficiency", Stat_Efficiency),
 			Option("Elemental Dmg", Stat_ElementalDamage),
 			Option("Endurance", Stat_Endurance),
 			Option("Endurance Regen", Stat_EnduranceRegen),
@@ -457,6 +482,7 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Mana Regen", Stat_ManaRegen),
 			Option("Purity", Stat_Purity),
 			Option("Range", Stat_Range),
+			Option("Ratio", Stat_Ratio),
 			Option("Shielding", Stat_Shielding),
 			Option("Spell Damage", Stat_SpellDamage),
 			Option("Spell Shielding", Stat_SpellShield),
@@ -661,6 +687,10 @@ constexpr MQColor grey_light = { 166, 166, 166 }; // might want to make this MQC
 
 static bool bOnlyShowDroppable = false;
 static bool bOnlyShowNoDrop = false;
+static char ReqMin[12] = "0";
+static char ReqMax[12] = "255";
+static char RecMin[12] = "0";
+static char RecMax[12] = "255";
 
 
 static void PopulateListBoxes() {
@@ -717,8 +747,8 @@ static bool IsAnySelected(const std::vector<Option>& OptionData) {
 static void GetMaskedValues(const int MaskedValue, const int MaxLoop, std::vector<int>& vOutVector) {
 	for (int i = 0; i < MaxLoop; i++) {
 		if (MaskedValue & (1 << i)) {
-			i++;//Offset by 1
-			vOutVector.emplace_back(i);
+			//i++;//Offset by 1
+			vOutVector.emplace_back(i + 1);
 		}
 	}
 }
@@ -742,11 +772,10 @@ static bool MatchesRaces(const ItemClient* pItem) {
 		GetMaskedValues(pItemDef->Races, NUM_RACES, Races);
 		for (auto& option : raceData) {
 			if (option.IsSelected) {
-				//Check if the race is found by Option.ID
 				auto it = std::find(Races.begin(), Races.end(), option.ID);
 				if (it != Races.end()) {
 					//Any debug logic before the true.
-					//WriteChatf("\ap%s\ax matches RaceID: %d OptionID: %d", pItem->GetItemDefinition()->Name, *it, option.ID);
+					//WriteChatf("\ap%s\ax matches RaceID: %s OptionID: %s", pItem->GetItemDefinition()->Name, szPlayerRaces[*it], szPlayerRaces[option.ID]);
 					matchfound = true;//If one of the races is found, we don't need to check any others.
 					break;
 				}
@@ -822,6 +851,44 @@ static bool MatchesSlots(const ItemClient* pItem) {
 		}
 
 		return foundMatch;
+	}
+
+	return true;
+}
+
+static bool MatchesLevelRequirements(const ItemClient* pItem) {
+	if (!pItem) {
+		return false;
+	}
+
+	ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+
+
+	if (int val = GetIntFromString(ReqMin, 0)) {
+		if (pItemDef->RequiredLevel < val) {
+			return false;
+		}
+	}
+
+	if (int val = GetIntFromString(ReqMax, 0)) {
+		if (pItemDef->RequiredLevel > val) {
+			return false;
+		}
+	}
+
+	if (int val = GetIntFromString(RecMin, 0)) {
+		if (pItemDef->RecommendedLevel < val) {
+			return false;
+		}
+	}
+
+	if (int val = GetIntFromString(RecMax, 0)) {
+		if (pItemDef->RecommendedLevel > val) {
+			return false;
+		}
 	}
 
 	return true;
@@ -1065,6 +1132,13 @@ static bool MatchesStats(const ItemClient* pItem) {
 
 						break;
 
+					case Stat_Efficiency:
+						if (pItemDef->Damage && pItemDef->Delay) {
+							hasStatCount++;
+						}
+
+						break;
+
 					case Stat_ElementalDamage:
 						if (pItemDef->ElementalDamage) {
 							hasStatCount++;
@@ -1255,6 +1329,13 @@ static bool MatchesStats(const ItemClient* pItem) {
 
 						break;
 
+					case Stat_Ratio:
+						if (pItemDef->Damage && pItemDef->Delay) {
+							hasStatCount++;
+						}
+
+						break;
+
 					case Stat_Shielding:
 						if (pItemDef->Shielding) {
 							hasStatCount++;
@@ -1396,6 +1477,13 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 		return false;
 	}
 
+	if (!MatchesLevelRequirements(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesLevelRequirements(pItem)", pItemDef->Name);
+#endif
+		return false;
+	}
+
 	if (!MatchesSlots(pItem)) {
 #ifdef DEBUGGING
 		WriteChatf("\arExcluding: \ap%s\axin MatchesSlot(pItem)", pItemDef->Name);
@@ -1449,9 +1537,256 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
  * But if you must have them, here is the place to put them.
  */
 static bool ShowMQFindItemWndWindow = true;
-static bool bItemsPopulated = false;
-static std::vector<ItemClient*> vItemList;
+struct LocationDetail {
+	LocationID loc;
+	// For top-level slot: inventory slot index for bags, bank/shared bank slot index, or worn slot index
+	int topSlotIndex = -1; // 0-based index as scanned
+	// If inside a container, this is the slot index within that container (0-based)
+	int bagSlotIndex = -1;
+	// Augment context
+	bool isAug = false;
+	int augSlotIndex = -1; // 0-based
+	std::string hostName; // name of the item containing this (for augs)
+};
+struct QueryResult {
+	ItemClient* item = nullptr;
+	LocationDetail location;
+};
+static std::vector<QueryResult> vResults;
+// During population, this indicates which location bucket we're scanning
+static LocationID g_CurrentScanLocation = Loc_Bags;
+
 static void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
+
+// Format a detailed, single-line location string per requirements
+static std::string FormatLocation(const LocationDetail& d)
+{
+	auto baseLocToStr = [](LocationID id) -> const char* {
+		switch (id)
+		{
+			case Loc_Bank: return "Bank";
+			case Loc_Shared_Bank: return "Shared Bank";
+			case Loc_Equipped: return "Equipped";
+			case Loc_Bags: return "Bags";
+			case Loc_Real_Estate: return "Real Estate";
+			case Loc_Item_Overflow: return "Item Overflow";
+			case Loc_Parcel: return "Parcel";
+#if (!IS_EMU_CLIENT)
+			case Loc_TradeSkillDepot: return "Tradeskill Depot";
+			case Loc_DragonsHorde: return "Dragon's Hoard";
+#endif
+			default: return "Unknown";
+		}
+	};
+
+	std::string out;
+	if (d.loc == Loc_Bags)
+	{
+		out = ""; // We'll build it starting with Bag below
+	}
+	else if (d.loc == Loc_Equipped)
+	{
+		auto getWornSlotName = [](int slot) -> const char* {
+			switch (slot) {
+				case InvSlot_Charm: return "Charm";
+				case InvSlot_LeftEar: return "Left Ear";
+				case InvSlot_Head: return "Head";
+				case InvSlot_Face: return "Face";
+				case InvSlot_RightEar: return "Right Ear";
+				case InvSlot_Neck: return "Neck";
+				case InvSlot_Shoulders: return "Shoulders";
+				case InvSlot_Arms: return "Arms";
+				case InvSlot_Back: return "Back";
+				case InvSlot_LeftWrist: return "Left Wrist";
+				case InvSlot_RightWrist: return "Right Wrist";
+				case InvSlot_Range: return "Range";
+				case InvSlot_Hands: return "Hands";
+				case InvSlot_Primary: return "Primary";
+				case InvSlot_Secondary: return "Secondary";
+				case InvSlot_LeftFingers: return "Left Fingers";
+				case InvSlot_RightFingers: return "Right Fingers";
+				case InvSlot_Chest: return "Chest";
+				case InvSlot_Legs: return "Legs";
+				case InvSlot_Feet: return "Feet";
+				case InvSlot_Waist: return "Waist";
+				case InvSlot_PowerSource: return "Power Source";
+				case InvSlot_Ammo: return "Ammo";
+				default: return "Equipped";
+			}
+		};
+		out = getWornSlotName(d.topSlotIndex);
+	}
+	else
+	{
+		out = baseLocToStr(d.loc);
+	}
+
+	// Compute human-friendly numbers (1-based) where applicable
+	auto oneBased = [](int idx) { return idx >= 0 ? idx + 1 : -1; };
+
+	// Append top level slot/bag information
+	if (d.loc == Loc_Bank || d.loc == Loc_Shared_Bank)
+	{
+		if (d.bagSlotIndex >= 0 && d.topSlotIndex >= 0)
+		{
+			// Bank item inside a bag in a bank slot: "Bank - Bag Y Slot Z"
+			out += " - Bag ";
+			out += std::to_string(oneBased(d.topSlotIndex));
+			out += " Slot ";
+			out += std::to_string(oneBased(d.bagSlotIndex));
+		}
+		else if (d.topSlotIndex >= 0)
+		{
+			// Loose item directly in bank slot: "Bank - Slot X"
+			out += " - Slot ";
+			out += std::to_string(oneBased(d.topSlotIndex));
+		}
+	}
+	else if (d.loc == Loc_Bags)
+	{
+		// Inventory bag slots: show Bag # and Slot # if inside a bag
+		if (d.bagSlotIndex >= 0)
+		{
+			out += "Bag ";
+			// Convert absolute inventory slot index to bag number (1-based)
+			// InvSlot_FirstBagSlot is the start of main inventory bag slots
+			int bagNum = -1;
+			if (d.topSlotIndex >= 0)
+			{
+				bagNum = oneBased(d.topSlotIndex - InvSlot_FirstBagSlot);
+				if (bagNum < 1) {
+					bagNum = oneBased(d.topSlotIndex);
+				}
+			}
+			out += std::to_string(bagNum);
+			out += " Slot ";
+			out += std::to_string(oneBased(d.bagSlotIndex));
+		}
+	}
+	else if (d.loc == Loc_Equipped)
+	{
+		if (d.bagSlotIndex >= 0)
+		{
+			out += " - Slot ";
+			out += std::to_string(oneBased(d.bagSlotIndex));
+		}
+	}
+
+	// Augment context appended at end
+	if (d.isAug)
+	{
+		out += " - Aug in ";
+		out += d.hostName;
+		if (d.augSlotIndex >= 0)
+		{
+			out += " Slot ";
+			out += std::to_string(oneBased(d.augSlotIndex));
+		}
+	}
+
+	return out;
+}
+
+// Build list of selected stat IDs and their labels for dynamic columns
+static std::vector<std::pair<StatID, std::string>> GetSelectedStatColumns()
+{
+	std::vector<std::pair<StatID, std::string>> out;
+	const auto& statsData = MenuData[OptionType_Stats].OptionList;
+	for (const auto& opt : statsData)
+	{
+		if (opt.IsSelected) {
+			out.emplace_back(static_cast<StatID>(opt.ID), opt.Name);
+		}
+	}
+	return out;
+}
+
+static float GetStatValueFloat(const ItemDefinition* def, const StatID stat) {
+	if (!def) {
+		return 0.0f;
+	}
+
+	switch (stat) {
+		case Stat_Ratio: return (static_cast<float>(def->Delay) / static_cast<float>(def->Damage));
+		default: return 0.0f;
+
+	}
+}
+
+// Get numeric value for a given stat from an item definition
+static int GetStatValue(const ItemDefinition* def, const StatID stat)
+{
+	if (!def) {
+		return 0;
+	}
+
+	switch (stat)
+	{
+		case Stat_Efficiency: return static_cast<int>(static_cast<float>(def->Damage) / static_cast<float>(def->Delay) * 100.0f);
+		case Stat_AC: return def->AC;
+		case Stat_Accuracy: return def->Accuracy;
+		case Stat_AGI: return def->AGI;
+		case Stat_Attack: return def->Attack;
+		case Stat_Attunable: return def->Attuneable ? 1 : 0;
+		case Stat_Avoidance: return def->Avoidance;
+		case Stat_BackstabDamage: return def->BackstabDamage;
+		case Stat_CHA: return def->CHA;
+		case Stat_Clairvoyance: return def->Clairvoyance;
+		case Stat_CombatEffects: return def->CombatEffects;
+		case Stat_Damage: return def->Damage;
+		case Stat_DamageShield: return def->DamShield;
+		case Stat_DEX: return def->DEX;
+		case Stat_DmgBonus: return def->DmgBonusValue;
+		case Stat_DoTShielding: return def->DoTShielding;
+		case Stat_DSMitigation: return def->DamageShieldMitigation;
+		case Stat_ElementalDamage: return def->ElementalDamage;
+		case Stat_Endurance: return def->Endurance;
+		case Stat_EnduranceRegen: return def->EnduranceRegen;
+		case Stat_Favor: return def->Favor;
+		case Stat_GuildFavor: return def->GuildFavor;
+		case Stat_Haste: return def->Haste;
+		case Stat_HealAmount: return def->HealAmount;
+		case Stat_Heirloom: return def->Heirloom ? 1 : 0;
+		case Stat_HeroicAgi: return def->HeroicAGI;
+		case Stat_HeroicCha: return def->HeroicCHA;
+		case Stat_HeroicCorruption: return def->HeroicSvCorruption;
+		case Stat_HeroicDex: return def->HeroicDEX;
+		case Stat_HeroicInt: return def->HeroicINT;
+		case Stat_HeroicPoison: return def->HeroicSvPoison;
+		case Stat_HeroicSta: return def->HeroicSTA;
+		case Stat_HeroicStr: return def->HeroicSTR;
+		case Stat_HeroicSvCold: return def->HeroicSvCold;
+		case Stat_HeroicSvDisease: return def->HeroicSvDisease;
+		case Stat_HeroicSvFire: return def->HeroicSvFire;
+		case Stat_HeroicSvMagic: return def->HeroicSvMagic;
+		case Stat_HeroicWis: return def->HeroicWIS;
+		case Stat_HP: return def->HP;
+		case Stat_HPRegen: return def->HPRegen;
+		case Stat_INT: return def->INT;
+		case Stat_Mana: return def->Mana;
+		case Stat_ManaRegen: return def->ManaRegen;
+		case Stat_Purity: return def->Purity;
+		case Stat_Range: return def->Range;
+		case Stat_Shielding: return def->Shielding;
+		case Stat_SpellDamage: return def->SpellDamage;
+		case Stat_SpellShield: return def->SpellShield;
+		case Stat_STA: return def->STA;
+		case Stat_STR: return def->STR;
+		case Stat_StrikeThrough: return def->StrikeThrough;
+		case Stat_StunResist: return def->StunResist;
+		case Stat_Summoned: return def->Summoned ? 1 : 0;
+		case Stat_SvCold: return def->SvCold;
+		case Stat_SvCorruption: return def->SvCorruption;
+		case Stat_SvDisease: return def->SvDisease;
+		case Stat_SvFire: return def->SvFire;
+		case Stat_SvMagic: return def->SvMagic;
+		case Stat_SvPoison: return def->SvPoison;
+		case Stat_TradeSkills: return def->TradeSkills ? 1 : 0;
+		case Stat_Weight: return def->Weight;
+		case Stat_WIS: return def->WIS;
+		default: return 0;
+	}
+}
 /**
  * @fn InitializePlugin
  *
@@ -1527,10 +1862,7 @@ PLUGIN_API void OnUpdateImGui() {
 		if (ImGui::Button("Search")) {
 			EzCommand("/searchitem");
 		}
-		ImGui::EndMenuBar();
-	}
 
-	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
 		//Reset all the options to false.
 		if (ImGui::Button("Reset Options")) {
 			for (auto& [type, data] : MenuData) {
@@ -1540,6 +1872,10 @@ PLUGIN_API void OnUpdateImGui() {
 			}
 		}
 
+		ImGui::EndMenuBar();
+	}
+
+	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
 
 		if (ImGui::Checkbox("Only Droppable", &bOnlyShowDroppable)) {
 			//Just an example to save the selection between sessions.
@@ -1549,6 +1885,32 @@ PLUGIN_API void OnUpdateImGui() {
 		if (ImGui::Checkbox("Only NoDrop", &bOnlyShowNoDrop)) {
 
 		}
+		ImGui::Text("Require Level");
+
+		ImGui::Text("Min");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(30);
+		ImGui::InputText("###MinRequired", ReqMin, 12);
+		ImGui::SameLine();
+		ImGui::Text("Max");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(30);
+		ImGui::InputText("###MaxRequired", ReqMax, 12);
+
+
+
+
+		ImGui::Text("Reccomended Level");
+
+		ImGui::Text("Min");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(30);
+		ImGui::InputText("###MinReccomend", RecMin, 12);
+		ImGui::SameLine();
+		ImGui::Text("Max");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(30);
+		ImGui::InputText("###MaxReccommend", RecMax, 12);
 
 		PopulateListBoxes();
 
@@ -1558,74 +1920,199 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::SameLine();
 	ImGui::BeginChild("##FindItemResults", ImVec2(0, 0), ImGuiChildFlags_Borders);
 
-		static std::shared_ptr<CTextureAnimation> pTAItemIcon;
+	static std::shared_ptr<CTextureAnimation> pTAItemIcon;
 
-		if (!pTAItemIcon) {
-			pTAItemIcon = std::make_shared<CTextureAnimation>();
-			if (CTextureAnimation* temp = pSidlMgr->FindAnimation("A_DragItem")) {
-				pTAItemIcon = std::make_unique<CTextureAnimation>(*temp);
+	if (!pTAItemIcon) {
+		pTAItemIcon = std::make_shared<CTextureAnimation>();
+		if (CTextureAnimation* temp = pSidlMgr->FindAnimation("A_DragItem")) {
+			pTAItemIcon = std::make_unique<CTextureAnimation>(*temp);
+		}
+	}
+
+
+	auto selectedStats = GetSelectedStatColumns();
+	constexpr ImGuiTableFlags tableFlags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Hideable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Sortable;
+	const int columnCount = static_cast<int>(3 + selectedStats.size());
+
+	if (ImGui::BeginTable("##ResultsTable", columnCount, tableFlags, ImGui::GetContentRegionAvail())) {
+		ImGui::TableSetupScrollFreeze(0, 1);
+
+		//Icon: fixed size, no resize, no sort
+		static constexpr ImGuiTableColumnFlags iconFlags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoSort;
+		ImGui::TableSetupColumn("Icon", iconFlags, 32.0f, 0);
+
+		//Name - default sort
+		static constexpr ImGuiTableColumnFlags columnFlags = ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize;
+		ImGui::TableSetupColumn("Name", columnFlags, 0.0f, 1);
+
+		//Location
+		ImGui::TableSetupColumn("Location", columnFlags, 0.0f, 2);
+
+		//Dynamic Stat columns
+		for (size_t i = 0; i < selectedStats.size(); ++i) {
+			ImGui::TableSetupColumn(selectedStats[i].second.c_str(), columnFlags, 0.0f, static_cast<ImGuiID>(3 + i));
+		}
+
+		ImGui::TableHeadersRow();
+
+		//Sort Stats/Location/Name
+		if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs()) {
+			if (sortSpecs->SpecsDirty) {
+				if (vResults.size() > 1) {
+					std::sort(vResults.begin(), vResults.end(), [&](const QueryResult& a, const QueryResult& b) {
+						for (int n = 0; n < sortSpecs->SpecsCount; n++) {
+							const ImGuiTableColumnSortSpecs* spec = &sortSpecs->Specs[n];
+							int res = 0;
+
+							switch (spec->ColumnUserID) {
+								case 1: // Name
+								{
+									res = _stricmp(a.item->GetName(), b.item->GetName());
+									if (res != 0) {
+										return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
+									}
+								}
+									break;
+								case 2: // Location
+								{
+									res = _stricmp(FormatLocation(a.location).c_str(), FormatLocation(b.location).c_str());
+									if (res != 0) {
+										return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
+									}
+								}
+									break;
+								default: // Stats
+									if (spec->ColumnUserID >= 3) {
+										const size_t statIdx = static_cast<size_t>(spec->ColumnUserID - 3);
+										if (statIdx < selectedStats.size()) {
+											const StatID sid = selectedStats[statIdx].first;
+											switch (sid) {
+												case Stat_Ratio://This is a float, and must be handled differently.
+												{
+													const float valA = GetStatValueFloat(a.item->GetItemDefinition(), sid);
+													const float valB = GetStatValueFloat(b.item->GetItemDefinition(), sid);
+													float res = (valA < valB) ? -1.0f : (valA > valB) ? 1.0f : 0.0f;
+													if (res != 0.0f) {
+														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0.0f) : (res > 0.0f);
+													}
+												}
+
+												break;
+
+												default:
+												{
+													const int valA = GetStatValue(a.item->GetItemDefinition(), sid);
+													const int valB = GetStatValue(b.item->GetItemDefinition(), sid);
+													res = (valA < valB) ? -1 : (valA > valB) ? 1 : 0;
+													if (res != 0) {
+														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
+													}
+												}
+
+												break;
+											}
+										}
+									}
+									break;
+							}
+						}
+						return false;
+						});
+				}
+				sortSpecs->SpecsDirty = false;
 			}
 		}
 
-
-		static size_t item_current_idx = 0;
-		if (ImGui::BeginListBox("##Results", ImGui::GetContentRegionAvail())) {
-			for (size_t i = 0; i < vItemList.size(); i++) {
-				ImGui::PushID(static_cast<int>(i));
-				const bool is_selected = (item_current_idx == i);
-
-				if (!vItemList.at(i)) {
-					continue;
-				}
-
-				const ItemDefinition* pItemDef = vItemList.at(i)->GetItemDefinition();
-				if (!pItemDef) {
-					continue;
-				}
-
-				if (pTAItemIcon) {
-					static constexpr int iEQItemOffset = 500;
-					static constexpr int iEQItemAltOffset = 336;
-					const int iIconID = vItemList.at(i)->GetIconID();
-					pTAItemIcon->SetCurCell(iIconID ? iIconID - iEQItemOffset : iEQItemAltOffset);
-					mq::imgui::DrawTextureAnimation(pTAItemIcon.get(), CXSize(25, 25), true);
-					ImGui::SameLine();
-				}
-
-
-
-				if (imgui::ItemLinkText(vItemList.at(i)->GetName(), GetColorForChatColor(USERCOLOR_LINK))) {
-					char ItemLinkText[512] = { 0 };
-					FormatItemLink(ItemLinkText, 512, vItemList.at(i));
-					TextTagInfo info = ExtractLink(ItemLinkText);
-					ExecuteTextLink(info);
-					item_current_idx = static_cast<int>(i);
-				}
-
-				//if (ImGui::Selectable(vItemList.at(i)->GetName(), is_selected)) {
-
-				//}
-
-				//Write the tooltip.
-				if (ImGui::IsItemHovered()) {
-					ImGui::BeginTooltip();
-					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-
-					ImGui::TextUnformatted(vItemList.at(i)->GetName());
-					//ImGui::TextUnformatted(vItemList.at(i).c_str());
-					ImGui::PopTextWrapPos();
-					ImGui::EndTooltip();
-				}
-
-				if (is_selected) {
-					ImGui::SetItemDefaultFocus();
-				}
-
-				ImGui::PopID();
+		for (size_t i = 0; i < vResults.size(); ++i) {
+			ItemClient* item = vResults[i].item;
+			if (!item) {
+				continue;
+			}
+			const ItemDefinition* pItemDef = item->GetItemDefinition();
+			if (!pItemDef) {
+				continue;
 			}
 
-			ImGui::EndListBox();
+			ImGui::TableNextRow();
+
+			// Icon
+			ImGui::TableSetColumnIndex(0);
+			if (pTAItemIcon) {
+				static constexpr int iEQItemOffset = 500;
+				static constexpr int iEQItemAltOffset = 336;
+				const int iIconID = item->GetIconID();
+				pTAItemIcon->SetCurCell(iIconID ? iIconID - iEQItemOffset : iEQItemAltOffset);
+				mq::imgui::DrawTextureAnimation(pTAItemIcon.get(), CXSize(25, 25), true);
+			}
+
+			// Name (link)
+			ImGui::TableSetColumnIndex(1);
+			if (imgui::ItemLinkText(item->GetName(), GetColorForChatColor(USERCOLOR_LINK))) {
+				char ItemLinkText[512] = { 0 };
+				FormatItemLink(ItemLinkText, 512, item);
+				TextTagInfo info = ExtractLink(ItemLinkText);
+				ExecuteTextLink(info);
+			}
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(item->GetName());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+
+			// Location
+			ImGui::TableSetColumnIndex(2);
+			std::string locStr = FormatLocation(vResults[i].location);
+			ImGui::TextUnformatted(locStr.c_str());
+
+			// Dynamic Stat columns
+			int colIndex = 3;
+			for (const auto& [sid, label] : selectedStats) {
+				ImGui::TableSetColumnIndex(colIndex++);
+				//Everything is normally uint8_t, int, or char - For floats, exceptions are made.
+				switch (sid) {
+					case Stat_Ratio:
+					{
+						const float val = GetStatValueFloat(pItemDef, sid);
+						if (val != 0.0f) {
+							ImGui::Text("%2.3f", val);
+						}
+						else {
+							ImGui::TextUnformatted("");
+						}
+					}
+
+					break;
+					case Stat_Efficiency:
+					{
+						const int val = GetStatValue(pItemDef, sid);
+						if (val != 0) {
+							ImGui::Text("%d", val);
+						}
+						else {
+							ImGui::TextUnformatted("");
+						}
+					}
+
+					default://This is for anything Int.
+					{
+						const int val = GetStatValue(pItemDef, sid);
+						if (val != 0) {
+							ImGui::Text("%d", val);
+						}
+						else {
+							ImGui::TextUnformatted("");
+						}
+					}
+
+					break;
+				}
+			}
 		}
+
+		ImGui::EndTable();
+	}
 
 	ImGui::EndChild();
 
@@ -1647,7 +2134,7 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::End();
 }
 
-static void GetContainedAugs(const ItemClient* pItem) {
+static void GetContainedAugs(const ItemClient* pItem, int topSlotIndex, int bagSlotIndex) {
 	if (!pItem) {
 		return;
 	}
@@ -1668,12 +2155,12 @@ static void GetContainedAugs(const ItemClient* pItem) {
 				continue;
 			}
 
-			OutPutItemDetails(pAug);
+			OutPutItemDetails(pAug, topSlotIndex, bagSlotIndex, pItem->GetName(), true, i);
 		}
 	}
 }
 
-void OutPutItemDetails(ItemClient* pItem) {
+void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, const char* hostName, bool isAug, int augSlotIndex) {
 	if (!pItem) {
 		return;
 	}
@@ -1690,20 +2177,34 @@ void OutPutItemDetails(ItemClient* pItem) {
 #endif
 
 	if (DoesItemMatchFilters(pItem)) {
-		vItemList.emplace_back(pItem);
+		QueryResult res;
+		res.item = pItem;
+		res.location.loc = g_CurrentScanLocation;
+		res.location.topSlotIndex = topSlotIndex;
+		res.location.bagSlotIndex = bagSlotIndex;
+		res.location.isAug = isAug;
+		res.location.augSlotIndex = augSlotIndex;
+		if (hostName) {
+			res.location.hostName = hostName;
+		}
+		else {
+			res.location.hostName.clear();
+		}
+		vResults.emplace_back(std::move(res));
 	}
 
 	//If an item is a container
 	if (pItem->IsContainer()) {//bool
-		for (ItemClient* ContainerItem : pItem->Contents) {
-			if (ContainerItem) {
-				OutPutItemDetails(ContainerItem);
+		const auto& held = pItem->GetHeldItems();
+		for (int si = 0; si < held.GetSize(); ++si) {
+			if (ItemClient* ContainerItem = pItem->GetContent(si)) {
+				OutPutItemDetails(ContainerItem, topSlotIndex, si, nullptr, false, -1);
 			}
 		}
 	}
 
 	//Gets augs currently socketed in items.
-	GetContainedAugs(pItem);
+	GetContainedAugs(pItem, topSlotIndex, bagSlotIndex);
 
 	return;
 
@@ -1713,49 +2214,49 @@ void OutPutItemDetails(ItemClient* pItem) {
 
 	//Evolving Items
 	///*0x10c*/ bool                  IsEvolvingItem;
-	if (pItem->IsEvolvingItem) {
-		//bool converted to const char array, int, int, double
-		WriteChatf("Evolving Item Status: %s Level: %d/%d Exp: %2.2f", (pItem->EvolvingExpOn ? "On" : "Off"), pItem->EvolvingCurrentLevel, pItem->EvolvingMaxLevel, pItem->EvolvingExpPct);
-	}
-
-
-	//StackCount - This is how many are in a stack.
-	if (pItem->IsStackable() && pItem->StackCount) {
-		WriteChatf("Stackable to: %d Currently contains: %d", pItemDef->StackSize, pItem->StackCount);
-	}
-
-	for (uint8_t i = eqlib::ItemSpellType_Clicky; i < ItemSpellType_Max; i++) {
-		eqlib::ItemSpellTypes currentType = static_cast<eqlib::ItemSpellTypes>(i);
-		if (const ItemSpellData::SpellData* pSpellData = pItemDef->GetSpellData(currentType)) {
-			EQ_Spell* pSpell = GetSpellByID(pSpellData->SpellID);
-			if (!pSpell) {
-				continue;
-			}
-
-			switch (currentType) {
-				case ItemSpellType_Clicky:
-					WriteChatf("Cliky Spell: %s CastTime: %2.2f Lvl Req: %hhu Charges: %d", pSpell->Name, pSpellData->CastTime * 0.001f, pSpellData->RequiredLevel, pItem->Charges);
-					break;
-				case ItemSpellType_Proc:
-					WriteChatf("Proc: %s ProcRate: %d", pSpell->Name, pSpellData->ProcRate);
-					break;
-				case ItemSpellType_Worn:
-					WriteChatf("Worn Spell: %s", pSpell->Name);
-					break;
-				case ItemSpellType_Focus:
-					WriteChatf("Focus Spell: %s", pSpell->Name);
-					break;
-				case ItemSpellType_Scroll:
-					break;
-				case ItemSpellType_Focus2:
-					WriteChatf("Secondary Spell: %s", pSpell->Name);
-					break;
-				default:
-					WriteChatf("Unaccounted for ItemSpellType encountered i: %d", i);
-			}
-
-		}
-	}
+	// if (pItem->IsEvolvingItem) {
+	// 	//bool converted to const char array, int, int, double
+	// 	WriteChatf("Evolving Item Status: %s Level: %d/%d Exp: %2.2f", (pItem->EvolvingExpOn ? "On" : "Off"), pItem->EvolvingCurrentLevel, pItem->EvolvingMaxLevel, pItem->EvolvingExpPct);
+	// }
+	//
+	//
+	// //StackCount - This is how many are in a stack.
+	// if (pItem->IsStackable() && pItem->StackCount) {
+	// 	WriteChatf("Stackable to: %d Currently contains: %d", pItemDef->StackSize, pItem->StackCount);
+	// }
+	//
+	// for (uint8_t i = eqlib::ItemSpellType_Clicky; i < ItemSpellType_Max; i++) {
+	// 	eqlib::ItemSpellTypes currentType = static_cast<eqlib::ItemSpellTypes>(i);
+	// 	if (const ItemSpellData::SpellData* pSpellData = pItemDef->GetSpellData(currentType)) {
+	// 		EQ_Spell* pSpell = GetSpellByID(pSpellData->SpellID);
+	// 		if (!pSpell) {
+	// 			continue;
+	// 		}
+	//
+	// 		switch (currentType) {
+	// 			case ItemSpellType_Clicky:
+	// 				WriteChatf("Cliky Spell: %s CastTime: %2.2f Lvl Req: %hhu Charges: %d", pSpell->Name, pSpellData->CastTime * 0.001f, pSpellData->RequiredLevel, pItem->Charges);
+	// 				break;
+	// 			case ItemSpellType_Proc:
+	// 				WriteChatf("Proc: %s ProcRate: %d", pSpell->Name, pSpellData->ProcRate);
+	// 				break;
+	// 			case ItemSpellType_Worn:
+	// 				WriteChatf("Worn Spell: %s", pSpell->Name);
+	// 				break;
+	// 			case ItemSpellType_Focus:
+	// 				WriteChatf("Focus Spell: %s", pSpell->Name);
+	// 				break;
+	// 			case ItemSpellType_Scroll:
+	// 				break;
+	// 			case ItemSpellType_Focus2:
+	// 				WriteChatf("Secondary Spell: %s", pSpell->Name);
+	// 				break;
+	// 			default:
+	// 				WriteChatf("Unaccounted for ItemSpellType encountered i: %d", i);
+	// 		}
+	//
+	// 	}
+	// }
 }
 
 void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
@@ -1763,51 +2264,57 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 		return;
 	}
 
-	vItemList.clear();//Must clear this list or every time you hit find it just adds to it.
+	vResults.clear();//Must clear this list or every time you hit find it just adds to it.
 
 	const auto& LocationData = MenuData[OptionType_Location].OptionList;
 	const bool anyLocationSelected = IsAnySelected(LocationData);
 
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Equipped].IsSelected) {
+		g_CurrentScanLocation = Loc_Equipped;
 		for (int iWornSlot = InvSlot_FirstWornItem; iWornSlot <= InvSlot_LastWornItem; iWornSlot++) {
 			if (ItemClient* pItem = pLocalPC->GetInventorySlot(iWornSlot)) {
-				OutPutItemDetails(pItem);
+				OutPutItemDetails(pItem, iWornSlot, -1, nullptr, false, -1);
 			}
 		}
 	}
 
-	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bags].IsSelected) {
+ if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bags].IsSelected) {
+ 		g_CurrentScanLocation = Loc_Bags;
 		for (int iBagSlot = InvSlot_FirstBagSlot; iBagSlot <= InvSlot_LastBagSlot; iBagSlot++) {
 			if (ItemClient* pItem = pLocalPC->GetInventorySlot(iBagSlot)) {
-				OutPutItemDetails(pItem);
+				OutPutItemDetails(pItem, iBagSlot, -1, nullptr, false, -1);
 			}
 		}
 	}
 
-	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bank].IsSelected) {
+ if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bank].IsSelected) {
+ 		g_CurrentScanLocation = Loc_Bank;
 		for (int i = 0; i < NUM_BANK_SLOTS; i++) {
 			if (ItemClient* pItem = pLocalPC->BankItems.GetItem(i)) {
-				OutPutItemDetails(pItem);
+				OutPutItemDetails(pItem, i, -1, nullptr, false, -1);
 			}
 		}
 
 	}
 
-	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Shared_Bank].IsSelected) {
+ if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Shared_Bank].IsSelected) {
+ 		g_CurrentScanLocation = Loc_Shared_Bank;
 		for (int i = 0; i < NUM_SHAREDBANK_SLOTS; i++) {
 			if (ItemClient* pItem = pLocalPC->SharedBankItems.GetItem(i)) {
-				OutPutItemDetails(pItem);
+				OutPutItemDetails(pItem, i, -1, nullptr, false, -1);
 			}
 		}
 	}
 
 #if (!IS_EMU_CLIENT)
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_TradeSkillDepot].IsSelected) {
-		//Populate later?
+		g_CurrentScanLocation = Loc_TradeSkillDepot;
+		// Populate later?
 	}
 
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_DragonsHorde].IsSelected) {
-		//Populate later?
+		g_CurrentScanLocation = Loc_DragonsHorde;
+		// Populate later?
 	}
 #endif
 }
