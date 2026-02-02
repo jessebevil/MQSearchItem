@@ -1707,7 +1707,7 @@ static float GetStatValueFloat(const ItemDefinition* def, const StatID stat) {
 	}
 
 	switch (stat) {
-		case Stat_Ratio: return (static_cast<float>(def->Delay) / static_cast<float>(def->Damage));
+		case Stat_Ratio: return (def->Damage && def->Delay ? (static_cast<float>(def->Delay) / static_cast<float>(def->Damage)) : 0.0f);
 		default: return 0.0f;
 
 	}
@@ -1722,7 +1722,7 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
 
 	switch (stat)
 	{
-		case Stat_Efficiency: return static_cast<int>(static_cast<float>(def->Damage) / static_cast<float>(def->Delay) * 100.0f);
+
 		case Stat_AC: return def->AC;
 		case Stat_Accuracy: return def->Accuracy;
 		case Stat_AGI: return def->AGI;
@@ -1739,6 +1739,7 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
 		case Stat_DmgBonus: return def->DmgBonusValue;
 		case Stat_DoTShielding: return def->DoTShielding;
 		case Stat_DSMitigation: return def->DamageShieldMitigation;
+		case Stat_Efficiency: return (def->Damage && def->Delay ? (static_cast<int>(static_cast<float>(def->Damage) / static_cast<float>(def->Delay) * 100.0f)) : 0);
 		case Stat_ElementalDamage: return def->ElementalDamage;
 		case Stat_Endurance: return def->Endurance;
 		case Stat_EnduranceRegen: return def->EnduranceRegen;
@@ -1989,8 +1990,8 @@ PLUGIN_API void OnUpdateImGui() {
 											switch (sid) {
 												case Stat_Ratio://This is a float, and must be handled differently.
 												{
-													const float valA = GetStatValueFloat(a.item->GetItemDefinition(), sid);
-													const float valB = GetStatValueFloat(b.item->GetItemDefinition(), sid);
+													const float valA = a.item ? GetStatValueFloat(a.item->GetItemDefinition(), sid) : 0.0f;
+													const float valB = b.item ? GetStatValueFloat(b.item->GetItemDefinition(), sid) : 0.0f;
 													float res = (valA < valB) ? -1.0f : (valA > valB) ? 1.0f : 0.0f;
 													if (res != 0.0f) {
 														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0.0f) : (res > 0.0f);
@@ -2001,8 +2002,8 @@ PLUGIN_API void OnUpdateImGui() {
 
 												default:
 												{
-													const int valA = GetStatValue(a.item->GetItemDefinition(), sid);
-													const int valB = GetStatValue(b.item->GetItemDefinition(), sid);
+													const int valA = a.item ? GetStatValue(a.item->GetItemDefinition(), sid) : 0;
+													const int valB = b.item ? GetStatValue(b.item->GetItemDefinition(), sid) : 0;
 													res = (valA < valB) ? -1 : (valA > valB) ? 1 : 0;
 													if (res != 0) {
 														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
@@ -2094,6 +2095,8 @@ PLUGIN_API void OnUpdateImGui() {
 							ImGui::TextUnformatted("");
 						}
 					}
+
+					break;
 
 					default://This is for anything Int.
 					{
@@ -2257,6 +2260,21 @@ void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, co
 	//
 	// 	}
 	// }
+}
+
+static bool bHadSearchResults = false;
+PLUGIN_API void OnBeginZone() {
+	if (vResults.size()) {
+		bHadSearchResults = true;
+	}
+	vResults.clear();//When we zone, the ItemClient* is no longer value. So we need to clear the results.
+}
+
+PLUGIN_API void OnZoned() {
+	if (bHadSearchResults) {
+		DoCommand("/searchitem");
+		bHadSearchResults = false;
+	}
 }
 
 void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
