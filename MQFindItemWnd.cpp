@@ -1965,10 +1965,14 @@ PLUGIN_API void OnUpdateImGui() {
 							const ImGuiTableColumnSortSpecs* spec = &sortSpecs->Specs[n];
 							int res = 0;
 
+							if (!a.item || !b.item) {
+								continue;
+							}
+
 							switch (spec->ColumnUserID) {
 								case 1: // Name
 								{
-									res = _stricmp(a.item->GetName(), b.item->GetName());
+									res = a.item && b.item ? _stricmp(a.item->GetName(), b.item->GetName()) : 0;
 									if (res != 0) {
 										return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
 									}
@@ -2029,6 +2033,7 @@ PLUGIN_API void OnUpdateImGui() {
 			if (!item) {
 				continue;
 			}
+
 			const ItemDefinition* pItemDef = item->GetItemDefinition();
 			if (!pItemDef) {
 				continue;
@@ -2280,6 +2285,10 @@ PLUGIN_API void OnZoned() {
 void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!pLocalPC) {
 		return;
+	}
+
+	if (!ShowMQFindItemWndWindow) {
+		ShowMQFindItemWndWindow = !ShowMQFindItemWndWindow;
 	}
 
 	vResults.clear();//Must clear this list or every time you hit find it just adds to it.
