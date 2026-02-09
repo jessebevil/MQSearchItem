@@ -689,6 +689,7 @@ constexpr MQColor grey_light = { 166, 166, 166 }; // might want to make this MQC
 
 static bool bOnlyShowDroppable = false;
 static bool bOnlyShowNoDrop = false;
+static char szSearchText[256] = "";
 static char ReqMin[12] = "0";
 static char ReqMax[12] = "255";
 static char RecMin[12] = "0";
@@ -1465,6 +1466,17 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 		return false;
 	}
 
+	if (szSearchText[0] != '\0') {
+		std::string itemName = pItemDef->Name;
+		std::string searchText = szSearchText;
+		std::transform(itemName.begin(), itemName.end(), itemName.begin(), [](unsigned char c) { return std::tolower(c); });
+		std::transform(searchText.begin(), searchText.end(), searchText.begin(), [](unsigned char c) { return std::tolower(c); });
+
+		if (itemName.find(searchText) == std::string::npos) {
+			return false;
+		}
+	}
+
 	//No Drop Filters
 	if (bOnlyShowDroppable && (!pItemDef->IsDroppable || pItem->NoDropFlag)) {
 #ifdef DEBUGGING
@@ -1868,6 +1880,13 @@ PLUGIN_API void OnUpdateImGui() {
 
 		//Reset all the options to false.
 		if (ImGui::Button("Reset Options")) {
+			szSearchText[0] = '\0';
+			bOnlyShowDroppable = false;
+			bOnlyShowNoDrop = false;
+			strcpy_s(ReqMin, "0");
+			strcpy_s(ReqMax, "255");
+			strcpy_s(RecMin, "0");
+			strcpy_s(RecMax, "255");
 			for (auto& [type, data] : MenuData) {
 				for (auto& opt : data.OptionList) {
 					opt.IsSelected = false;
@@ -1880,15 +1899,33 @@ PLUGIN_API void OnUpdateImGui() {
 
 	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
 
+		ImGui::Text("Search:");
+		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
+		if (ImGui::SmallButton("Clear##Search")) {
+			szSearchText[0] = '\0';
+		}
+
+		ImGui::InputText("##SearchBox", szSearchText, IM_ARRAYSIZE(szSearchText));
+
 		if (ImGui::Checkbox("Only Droppable", &bOnlyShowDroppable)) {
-			//Just an example to save the selection between sessions.
-			//WriteINI("FindItemOption", "OnlyDroppable", bbOnlyShowDroppable, ThisINIFileName);
+			if (bOnlyShowDroppable) {
+				bOnlyShowNoDrop = false;
+			}
 		}
 
 		if (ImGui::Checkbox("Only NoDrop", &bOnlyShowNoDrop)) {
-
+			if (bOnlyShowNoDrop) {
+				bOnlyShowDroppable = false;
+			}
 		}
+
 		ImGui::Text("Require Level");
+		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
+
+		if (ImGui::SmallButton("Clear##ReqLevel")) {
+			strcpy_s(ReqMin, "0");
+			strcpy_s(ReqMax, "255");
+		}
 
 		ImGui::Text("Min");
 		ImGui::SameLine();
@@ -1900,10 +1937,13 @@ PLUGIN_API void OnUpdateImGui() {
 		ImGui::SetNextItemWidth(30);
 		ImGui::InputText("###MaxRequired", ReqMax, 12);
 
-
-
-
 		ImGui::Text("Reccomended Level");
+		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
+
+		if (ImGui::SmallButton("Clear##RecLevel")) {
+			strcpy_s(RecMin, "0");
+			strcpy_s(RecMax, "255");
+		}
 
 		ImGui::Text("Min");
 		ImGui::SameLine();
@@ -2060,7 +2100,7 @@ PLUGIN_API void OnUpdateImGui() {
 				TextTagInfo info = ExtractLink(ItemLinkText);
 				ExecuteTextLink(info);
 			}
-			
+
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -2274,7 +2314,7 @@ PLUGIN_API void OnBeginZone() {
 	if (!vResults.empty()) {
 		bHadSearchResults = true;
 	}
-	
+
 	vResults.clear();//When we zone, the ItemClient* is no longer value. So we need to clear the results.
 }
 
@@ -2288,6 +2328,10 @@ PLUGIN_API void OnZoned() {
 void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!pLocalPC) {
 		return;
+	}
+
+	if (szArgs && szArgs[0] != '\0') {
+		strcpy_s(szSearchText, szArgs);
 	}
 
 	if (!ShowMQFindItemWndWindow) {
