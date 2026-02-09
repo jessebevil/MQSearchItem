@@ -9,6 +9,20 @@
 // ReSharper disable CppClangTidyBugproneBranchClone
 #include <mq/Plugin.h>
 #include <mq/imgui/Widgets.h>
+#include <filesystem>
+#include <sstream>
+#include <algorithm>
+
+// Saved Searches helpers forward declarations (global scope)
+namespace fs = std::filesystem;
+static std::string SanitizeFileName(const std::string& name);
+static std::string GetSavedSearchesDir();
+static std::string GetSearchFilePath(const std::string& name);
+static void EnsureSavedSearchDir();
+static bool SaveCurrentSearchToFile(const std::string& path);
+static bool LoadSearchFromFile(const std::string& path);
+static bool DeleteSearchFile(const std::string& path);
+static std::vector<std::string> ListSavedSearches();
 
 PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
@@ -1466,11 +1480,12 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 		return false;
 	}
 
+	//Filter by name
 	if (szSearchText[0] != '\0') {
 		std::string itemName = pItemDef->Name;
 		std::string searchText = szSearchText;
-		std::transform(itemName.begin(), itemName.end(), itemName.begin(), [](unsigned char c) { return std::tolower(c); });
-		std::transform(searchText.begin(), searchText.end(), searchText.begin(), [](unsigned char c) { return std::tolower(c); });
+		std::transform(itemName.begin(), itemName.end(), itemName.begin(), [](const unsigned char c) { return std::tolower(c); });
+		std::transform(searchText.begin(), searchText.end(), searchText.begin(), [](const unsigned char c) { return std::tolower(c); });
 
 		if (itemName.find(searchText) == std::string::npos) {
 			return false;
@@ -1872,13 +1887,15 @@ PLUGIN_API void OnUpdateImGui() {
 		return;
 	}
 
+	//Maybe it's silly, but we need this to open the popup that's referenced inside the menu bar.
+	bool openSavePopup = false;
 
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::Button("Search")) {
 			EzCommand("/searchitem");
 		}
 
-		//Reset all the options to false.
+		//Reset all the options to defaults.
 		if (ImGui::Button("Reset Options")) {
 			szSearchText[0] = '\0';
 			bOnlyShowDroppable = false;
@@ -1894,7 +1911,65 @@ PLUGIN_API void OnUpdateImGui() {
 			}
 		}
 
+		//Saved Searches menu
+		if (ImGui::BeginMenu("Saved Searches")) {
+			if (ImGui::MenuItem("Save New Search...")) {
+				openSavePopup = true;
+			}
+
+			if (ImGui::BeginMenu("Load Search")) {
+				for (const auto& name : ListSavedSearches()) {
+					if (ImGui::MenuItem(name.c_str())) {
+						LoadSearchFromFile(GetSearchFilePath(name));
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Delete Search")) {
+				for (const auto& name : ListSavedSearches()) {
+					if (ImGui::MenuItem(name.c_str())) {
+						DeleteSearchFile(GetSearchFilePath(name));
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMenuBar();
+	}
+
+	if (openSavePopup) {//If we said to open the popup in the menu, then here is where we implement it.
+		ImGui::OpenPopup("SaveSearchPopup");
+	}
+
+	// Save popup
+	ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(300, 0), ImVec2(600, FLT_MAX));
+	if (ImGui::BeginPopupModal("SaveSearchPopup")) {
+		static char saveName[128] = "";
+		ImGui::Text("Search Name:");
+		ImGui::InputText("##SaveSearchName", saveName, IM_ARRAYSIZE(saveName));
+
+		if (ImGui::Button("Save")) {
+			if (saveName[0] != '\0') {
+				EnsureSavedSearchDir();
+				SaveCurrentSearchToFile(GetSearchFilePath(saveName));
+			}
+
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel")) {
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
 	}
 
 	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
@@ -2325,6 +2400,151 @@ PLUGIN_API void OnZoned() {
 	}
 }
 
+static std::string SanitizeFileName(const std::string& name) {
+	std::string out;
+	out.reserve(name.size());
+	for (const char c : name) {
+		if (c == '<' || c == '>' || c == ':' || c == '"' || c == '/' || c == '\\' || c == '|' || c == '?' || c == '*') {
+			out += '_';
+		}
+		else {
+			out += c;
+		}
+	}
+	
+	//trim spaces
+	while (!out.empty() && (out.back() == ' ' || out.back() == '.')) {
+		out.pop_back();
+	}
+	
+	if (out.empty()) {
+		out = "Search";
+	}
+	
+	return out;
+}
+
+static std::string GetSavedSearchesDir() {
+	return (fs::path(gPathConfig) / "SavedSearches").string();
+}
+
+static std::string GetSearchFilePath(const std::string& name) {
+	const std::string cleaned = SanitizeFileName(name);
+	const fs::path p = fs::path(GetSavedSearchesDir()) / (cleaned + ".ini");
+	return p.string();
+}
+
+static void EnsureSavedSearchDir() {
+	std::error_code ec;
+	fs::create_directories(GetSavedSearchesDir(), ec);
+}
+
+static bool SaveCurrentSearchToFile(const std::string& path) {
+	WritePrivateProfileString("General", "Search", szSearchText, path);
+	WritePrivateProfileBool("General", "OnlyDroppable", bOnlyShowDroppable, path);
+	WritePrivateProfileBool("General", "OnlyNoDrop", bOnlyShowNoDrop, path);
+	WritePrivateProfileString("General", "ReqMin", ReqMin, path);
+	WritePrivateProfileString("General", "ReqMax", ReqMax, path);
+	WritePrivateProfileString("General", "RecMin", RecMin, path);
+	WritePrivateProfileString("General", "RecMax", RecMax, path);
+
+	// Menu selections
+	for (auto& [type, data] : MenuData) {
+		std::ostringstream oss;
+		bool first = true;
+		for (const auto& opt : data.OptionList) {
+			if (opt.IsSelected) {
+				if (!first) {
+					oss << ',';
+				}
+				first = false;
+				oss << opt.ID;
+			}
+		}
+		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
+		WritePrivateProfileString(section, "SelectedIDs", oss.str(), path);
+	}
+	
+	return true;
+}
+
+static bool LoadSearchFromFile(const std::string& path) {
+
+	const std::string sSearch = GetPrivateProfileString("General", "Search", "", path);
+	strcpy_s(szSearchText, sSearch.c_str());
+	bOnlyShowDroppable = GetPrivateProfileBool("General", "OnlyDroppable", false, path);
+	bOnlyShowNoDrop = GetPrivateProfileBool("General", "OnlyNoDrop", false, path);
+	const std::string reqMin = GetPrivateProfileString("General", "ReqMin", ReqMin, path);
+	const std::string reqMax = GetPrivateProfileString("General", "ReqMax", ReqMax, path);
+	const std::string recMin = GetPrivateProfileString("General", "RecMin", RecMin, path);
+	const std::string recMax = GetPrivateProfileString("General", "RecMax", RecMax, path);
+	strcpy_s(ReqMin, reqMin.c_str());
+	strcpy_s(ReqMax, reqMax.c_str());
+	strcpy_s(RecMin, recMin.c_str());
+	strcpy_s(RecMax, recMax.c_str());
+
+	//parse CSV selections
+	auto parseCsv = [](const std::string& csv) {
+		std::vector<int> ids;
+		std::stringstream ss(csv);
+		std::string token;
+		while (std::getline(ss, token, ',')) {
+			if (!token.empty()) {
+				ids.push_back(GetIntFromString(token, 0));
+			}
+		}
+		
+		return ids;
+	};
+
+	for (auto& [type, data] : MenuData) {
+		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
+		const std::string csv = GetPrivateProfileString(section, "SelectedIDs", "", path);
+		const auto ids = parseCsv(csv);
+		
+		//reset all first
+		for (auto& opt : data.OptionList) {
+			opt.IsSelected = false;
+		}
+		
+		for (const int id : ids) {
+			for (auto& opt : data.OptionList) {
+				if (opt.ID == id) { opt.IsSelected = true; break; }
+			}
+		}
+	}
+
+	//auto-run search after loading
+	EzCommand("/searchitem");
+	return true;
+}
+
+static bool DeleteSearchFile(const std::string& path) {
+	std::error_code ec;
+	return fs::remove(path, ec);
+}
+
+static std::vector<std::string> ListSavedSearches() {
+	std::vector<std::string> names;
+	std::error_code ec;
+	const fs::path dir = GetSavedSearchesDir();
+	if (!fs::exists(dir, ec)) {
+		return names;
+	}
+	
+	for (const auto& entry : fs::directory_iterator(dir, ec)) {
+		if (entry.is_regular_file()) {
+			const auto& p = entry.path();
+			if (p.has_extension() && p.extension() == ".ini") {
+				names.emplace_back(p.stem().string());
+			}
+		}
+	}
+	
+	std::sort(names.begin(), names.end());
+	return names;
+}
+
 void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!pLocalPC) {
 		return;
@@ -2352,8 +2572,8 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 		}
 	}
 
- if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bags].IsSelected) {
- 		g_CurrentScanLocation = Loc_Bags;
+	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bags].IsSelected) {
+		g_CurrentScanLocation = Loc_Bags;
 		for (int iBagSlot = InvSlot_FirstBagSlot; iBagSlot <= InvSlot_LastBagSlot; iBagSlot++) {
 			if (const ItemPtr pItem = pLocalPC->GetInventorySlot(iBagSlot)) {
 				OutPutItemDetails(pItem, iBagSlot, -1, nullptr, false, -1);
@@ -2361,8 +2581,8 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 		}
 	}
 
- if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bank].IsSelected) {
- 		g_CurrentScanLocation = Loc_Bank;
+	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bank].IsSelected) {
+		g_CurrentScanLocation = Loc_Bank;
 		for (int i = 0; i < NUM_BANK_SLOTS; i++) {
 			if (const ItemPtr pItem = pLocalPC->BankItems.GetItem(i)) {
 				OutPutItemDetails(pItem, i, -1, nullptr, false, -1);
@@ -2371,8 +2591,8 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 
 	}
 
- if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Shared_Bank].IsSelected) {
- 		g_CurrentScanLocation = Loc_Shared_Bank;
+	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Shared_Bank].IsSelected) {
+		g_CurrentScanLocation = Loc_Shared_Bank;
 		for (int i = 0; i < NUM_SHAREDBANK_SLOTS; i++) {
 			if (const ItemPtr pItem = pLocalPC->SharedBankItems.GetItem(i)) {
 				OutPutItemDetails(pItem, i, -1, nullptr, false, -1);
