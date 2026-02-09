@@ -14,7 +14,7 @@ PreSetup("MQFindItemWnd");
 PLUGIN_VERSION(0.1);
 //#define DEBUGGING
 
-static void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, const char* hostName, bool isAug, int augSlotIndex);
+static void OutPutItemDetails(ItemPtr pItem, int topSlotIndex, int bagSlotIndex, const char* hostName, bool isAug, int augSlotIndex);
 
 struct Option {
 	std::string Name;
@@ -203,6 +203,7 @@ enum RaceID : uint8_t {
 	Race_Drakkin
 };
 
+#ifdef DEBUGGING
 static const char* szPlayerRaces[] = {
 	"None",
 	"Human",
@@ -222,6 +223,7 @@ static const char* szPlayerRaces[] = {
 	"Froglok",
 	"Drakkin"
 };
+#endif
 
 enum ClassID : uint8_t {
 	Class_Warrior = 1,
@@ -861,31 +863,31 @@ static bool MatchesLevelRequirements(const ItemClient* pItem) {
 		return false;
 	}
 
-	ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
 	if (!pItemDef) {
 		return false;
 	}
 
 
-	if (int val = GetIntFromString(ReqMin, 0)) {
+	if (const int val = GetIntFromString(ReqMin, 0)) {
 		if (pItemDef->RequiredLevel < val) {
 			return false;
 		}
 	}
 
-	if (int val = GetIntFromString(ReqMax, 0)) {
+	if (const int val = GetIntFromString(ReqMax, 0)) {
 		if (pItemDef->RequiredLevel > val) {
 			return false;
 		}
 	}
 
-	if (int val = GetIntFromString(RecMin, 0)) {
+	if (const int val = GetIntFromString(RecMin, 0)) {
 		if (pItemDef->RecommendedLevel < val) {
 			return false;
 		}
 	}
 
-	if (int val = GetIntFromString(RecMax, 0)) {
+	if (const int val = GetIntFromString(RecMax, 0)) {
 		if (pItemDef->RecommendedLevel > val) {
 			return false;
 		}
@@ -1549,7 +1551,7 @@ struct LocationDetail {
 	std::string hostName; // name of the item containing this (for augs)
 };
 struct QueryResult {
-	ItemClient* item = nullptr;
+	ItemPtr item = nullptr;
 	LocationDetail location;
 };
 static std::vector<QueryResult> vResults;
@@ -1561,7 +1563,7 @@ static void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
 // Format a detailed, single-line location string per requirements
 static std::string FormatLocation(const LocationDetail& d)
 {
-	auto baseLocToStr = [](LocationID id) -> const char* {
+	auto baseLocToStr = [](const LocationID id) -> const char* {
 		switch (id)
 		{
 			case Loc_Bank: return "Bank";
@@ -1586,7 +1588,7 @@ static std::string FormatLocation(const LocationDetail& d)
 	}
 	else if (d.loc == Loc_Equipped)
 	{
-		auto getWornSlotName = [](int slot) -> const char* {
+		auto getWornSlotName = [](const int slot) -> const char* {
 			switch (slot) {
 				case InvSlot_Charm: return "Charm";
 				case InvSlot_LeftEar: return "Left Ear";
@@ -1622,7 +1624,7 @@ static std::string FormatLocation(const LocationDetail& d)
 	}
 
 	// Compute human-friendly numbers (1-based) where applicable
-	auto oneBased = [](int idx) { return idx >= 0 ? idx + 1 : -1; };
+	auto oneBased = [](const int idx) { return idx >= 0 ? idx + 1 : -1; };
 
 	// Append top level slot/bag information
 	if (d.loc == Loc_Bank || d.loc == Loc_Shared_Bank)
@@ -1963,7 +1965,6 @@ PLUGIN_API void OnUpdateImGui() {
 					std::sort(vResults.begin(), vResults.end(), [&](const QueryResult& a, const QueryResult& b) {
 						for (int n = 0; n < sortSpecs->SpecsCount; n++) {
 							const ImGuiTableColumnSortSpecs* spec = &sortSpecs->Specs[n];
-							int res = 0;
 
 							if (!a.item || !b.item) {
 								continue;
@@ -1972,7 +1973,7 @@ PLUGIN_API void OnUpdateImGui() {
 							switch (spec->ColumnUserID) {
 								case 1: // Name
 								{
-									res = a.item && b.item ? _stricmp(a.item->GetName(), b.item->GetName()) : 0;
+									const int res = _stricmp(a.item->GetName(), b.item->GetName());
 									if (res != 0) {
 										return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
 									}
@@ -1980,7 +1981,7 @@ PLUGIN_API void OnUpdateImGui() {
 									break;
 								case 2: // Location
 								{
-									res = _stricmp(FormatLocation(a.location).c_str(), FormatLocation(b.location).c_str());
+									const int res = _stricmp(FormatLocation(a.location).c_str(), FormatLocation(b.location).c_str());
 									if (res != 0) {
 										return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
 									}
@@ -1994,11 +1995,11 @@ PLUGIN_API void OnUpdateImGui() {
 											switch (sid) {
 												case Stat_Ratio://This is a float, and must be handled differently.
 												{
-													const float valA = a.item ? GetStatValueFloat(a.item->GetItemDefinition(), sid) : 0.0f;
-													const float valB = b.item ? GetStatValueFloat(b.item->GetItemDefinition(), sid) : 0.0f;
-													float res = (valA < valB) ? -1.0f : (valA > valB) ? 1.0f : 0.0f;
-													if (res != 0.0f) {
-														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0.0f) : (res > 0.0f);
+													const float valA = GetStatValueFloat(a.item->GetItemDefinition(), sid);
+													const float valB = GetStatValueFloat(b.item->GetItemDefinition(), sid);
+													const float result = (valA < valB) ? -1.0f : (valA > valB) ? 1.0f : 0.0f;
+													if (result != 0.0f) {
+														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (result < 0.0f) : (result > 0.0f);
 													}
 												}
 
@@ -2006,9 +2007,9 @@ PLUGIN_API void OnUpdateImGui() {
 
 												default:
 												{
-													const int valA = a.item ? GetStatValue(a.item->GetItemDefinition(), sid) : 0;
-													const int valB = b.item ? GetStatValue(b.item->GetItemDefinition(), sid) : 0;
-													res = (valA < valB) ? -1 : (valA > valB) ? 1 : 0;
+													const int valA = GetStatValue(a.item->GetItemDefinition(), sid);
+													const int valB = GetStatValue(b.item->GetItemDefinition(), sid);
+													const int res = (valA < valB) ? -1 : (valA > valB) ? 1 : 0;
 													if (res != 0) {
 														return (spec->SortDirection == ImGuiSortDirection_Ascending) ? (res < 0) : (res > 0);
 													}
@@ -2028,8 +2029,8 @@ PLUGIN_API void OnUpdateImGui() {
 			}
 		}
 
-		for (size_t i = 0; i < vResults.size(); ++i) {
-			ItemClient* item = vResults[i].item;
+		for (const auto& vResult : vResults) {
+			ItemPtr item = vResult.item;
 			if (!item) {
 				continue;
 			}
@@ -2055,10 +2056,11 @@ PLUGIN_API void OnUpdateImGui() {
 			ImGui::TableSetColumnIndex(1);
 			if (imgui::ItemLinkText(item->GetName(), GetColorForChatColor(USERCOLOR_LINK))) {
 				char ItemLinkText[512] = { 0 };
-				FormatItemLink(ItemLinkText, 512, item);
+				FormatItemLink(ItemLinkText, 512, item.get());
 				TextTagInfo info = ExtractLink(ItemLinkText);
 				ExecuteTextLink(info);
 			}
+			
 			if (ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -2069,7 +2071,7 @@ PLUGIN_API void OnUpdateImGui() {
 
 			// Location
 			ImGui::TableSetColumnIndex(2);
-			std::string locStr = FormatLocation(vResults[i].location);
+			std::string locStr = FormatLocation(vResult.location);
 			ImGui::TextUnformatted(locStr.c_str());
 
 			// Dynamic Stat columns
@@ -2142,7 +2144,7 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::End();
 }
 
-static void GetContainedAugs(const ItemClient* pItem, int topSlotIndex, int bagSlotIndex) {
+static void GetContainedAugs(const ItemClient* pItem, const int topSlotIndex, const int bagSlotIndex) {
 	if (!pItem) {
 		return;
 	}
@@ -2158,7 +2160,7 @@ static void GetContainedAugs(const ItemClient* pItem, int topSlotIndex, int bagS
 
 	for (int i = 0; i <= MAX_AUG_SOCKETS; i++) {
 		if (pItemDef->AugData.Sockets[i].bVisible) {
-			ItemClient* pAug = pItem->GetHeldItem(i);
+			ItemPtr pAug = pItem->GetHeldItem(i);
 			if (!pAug) {
 				continue;
 			}
@@ -2168,12 +2170,12 @@ static void GetContainedAugs(const ItemClient* pItem, int topSlotIndex, int bagS
 	}
 }
 
-void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, const char* hostName, bool isAug, int augSlotIndex) {
+void OutPutItemDetails(ItemPtr pItem, const int topSlotIndex, const int bagSlotIndex, const char* hostName, const bool isAug, const int augSlotIndex) {
 	if (!pItem) {
 		return;
 	}
 
-	ItemDefinition* pItemDef = GetItemFromContents(pItem);
+	ItemDefinition* pItemDef = pItem->GetItemDefinition();
 	if (!pItemDef) {
 		return;
 	}
@@ -2184,7 +2186,7 @@ void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, co
 	}
 #endif
 
-	if (DoesItemMatchFilters(pItem)) {
+	if (DoesItemMatchFilters(pItem.get())) {
 		QueryResult res;
 		res.item = pItem;
 		res.location.loc = g_CurrentScanLocation;
@@ -2205,14 +2207,14 @@ void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, co
 	if (pItem->IsContainer()) {//bool
 		const auto& held = pItem->GetHeldItems();
 		for (int si = 0; si < held.GetSize(); ++si) {
-			if (ItemClient* ContainerItem = pItem->GetContent(si)) {
+			if (const ItemPtr ContainerItem = pItem->GetHeldItem(si)) {
 				OutPutItemDetails(ContainerItem, topSlotIndex, si, nullptr, false, -1);
 			}
 		}
 	}
 
 	//Gets augs currently socketed in items.
-	GetContainedAugs(pItem, topSlotIndex, bagSlotIndex);
+	GetContainedAugs(pItem.get(), topSlotIndex, bagSlotIndex);
 
 	return;
 
@@ -2269,9 +2271,10 @@ void OutPutItemDetails(ItemClient* pItem, int topSlotIndex, int bagSlotIndex, co
 
 static bool bHadSearchResults = false;
 PLUGIN_API void OnBeginZone() {
-	if (vResults.size()) {
+	if (!vResults.empty()) {
 		bHadSearchResults = true;
 	}
+	
 	vResults.clear();//When we zone, the ItemClient* is no longer value. So we need to clear the results.
 }
 
@@ -2299,7 +2302,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Equipped].IsSelected) {
 		g_CurrentScanLocation = Loc_Equipped;
 		for (int iWornSlot = InvSlot_FirstWornItem; iWornSlot <= InvSlot_LastWornItem; iWornSlot++) {
-			if (ItemClient* pItem = pLocalPC->GetInventorySlot(iWornSlot)) {
+			if (const ItemPtr pItem = pLocalPC->GetInventorySlot(iWornSlot)) {
 				OutPutItemDetails(pItem, iWornSlot, -1, nullptr, false, -1);
 			}
 		}
@@ -2308,7 +2311,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
  if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bags].IsSelected) {
  		g_CurrentScanLocation = Loc_Bags;
 		for (int iBagSlot = InvSlot_FirstBagSlot; iBagSlot <= InvSlot_LastBagSlot; iBagSlot++) {
-			if (ItemClient* pItem = pLocalPC->GetInventorySlot(iBagSlot)) {
+			if (const ItemPtr pItem = pLocalPC->GetInventorySlot(iBagSlot)) {
 				OutPutItemDetails(pItem, iBagSlot, -1, nullptr, false, -1);
 			}
 		}
@@ -2317,7 +2320,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
  if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Bank].IsSelected) {
  		g_CurrentScanLocation = Loc_Bank;
 		for (int i = 0; i < NUM_BANK_SLOTS; i++) {
-			if (ItemClient* pItem = pLocalPC->BankItems.GetItem(i)) {
+			if (const ItemPtr pItem = pLocalPC->BankItems.GetItem(i)) {
 				OutPutItemDetails(pItem, i, -1, nullptr, false, -1);
 			}
 		}
@@ -2327,7 +2330,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
  if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Shared_Bank].IsSelected) {
  		g_CurrentScanLocation = Loc_Shared_Bank;
 		for (int i = 0; i < NUM_SHAREDBANK_SLOTS; i++) {
-			if (ItemClient* pItem = pLocalPC->SharedBankItems.GetItem(i)) {
+			if (const ItemPtr pItem = pLocalPC->SharedBankItems.GetItem(i)) {
 				OutPutItemDetails(pItem, i, -1, nullptr, false, -1);
 			}
 		}
