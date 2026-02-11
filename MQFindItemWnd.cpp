@@ -711,7 +711,6 @@ static char RecMax[12] = "255";
 
 
 static void PopulateListBoxes() {
-	static constexpr ImVec2 listBoxSize = ImVec2(150, 100);
 	for (auto& [type, data] : MenuData) {
 
 		//Label for this section
@@ -727,19 +726,25 @@ static void PopulateListBoxes() {
 		}
 
 		//Prepare the preview string
-		std::string previewValue = "";
-		for (auto& opt : data.OptionList) {
+		std::string previewValue;
+		for (const auto& opt : data.OptionList) {
 			if (opt.IsSelected) {
-				if (!previewValue.empty()) previewValue += ", ";
+				if (!previewValue.empty()) {
+					previewValue += ", ";
+				}
+				
 				previewValue += opt.Name;
 			}
 		}
-		if (previewValue.empty()) previewValue = "Select options...";
+		
+		if (previewValue.empty()) {
+			previewValue = "Select options...";
+		}
 
 		ImGui::SetNextItemWidth(ImGui::GetWindowWidth()-30);
 		//We're starting a combo box here - needs an EndCombo later, even if it's not in an if statement.
 		std::string internalID = "##List" + std::to_string(type);
-		bool isOpened = ImGui::BeginCombo(internalID.c_str(), previewValue.c_str());
+		const bool isOpened = ImGui::BeginCombo(internalID.c_str(), previewValue.c_str());
 
 		//tooltip for the closed combo box - will show all options that are currently selected.
 		if (ImGui::IsItemHovered()) {
@@ -1727,7 +1732,7 @@ static std::string FormatLocation(const LocationDetail& d)
 	if (d.isAug)
 	{
 		out += " - Aug in ";
-		out += d.hostName;
+		//out += d.hostName;
 		if (d.augSlotIndex >= 0)
 		{
 			out += " Slot ";
@@ -1994,8 +1999,7 @@ PLUGIN_API void OnUpdateImGui() {
 		ImGui::EndPopup();
 	}
 
-
-	ImGuiWindowFlags childflags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar;
+	static constexpr ImGuiWindowFlags childflags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, childflags);
 
 		ImGui::Text("Search:");
@@ -2210,6 +2214,57 @@ PLUGIN_API void OnUpdateImGui() {
 
 			// Location
 			ImGui::TableSetColumnIndex(2);
+			if (!vResult.location.isAug) {
+				char buf[128] = { 0 };
+				sprintf_s(buf, 128, "GrabItem##%s", FormatLocation(vResult.location).c_str());
+				if (ImGui::SmallButton(buf)) {
+					if (pLocalPC->GetInventorySlot(InvSlot_Cursor)) {
+						DoCommand("/autoinv");
+					}
+					
+					switch (vResult.location.loc) {
+						case Loc_Bank:
+						case Loc_Shared_Bank:
+							if (pBankWnd && pBankWnd->IsVisible()) {
+								if (vResult.location.bagSlotIndex != -1) {
+									const int Slot = vResult.location.topSlotIndex + 1;
+									const int Slot2 = vResult.location.bagSlotIndex + 1;
+									WriteChatf("Grabbing item in bank bag %d slot %d", Slot, Slot2);
+									DoCommandf("/itemnotify in bank%d %d leftmouseup", Slot, Slot2);
+								}
+								else {
+									const int Slot = vResult.location.topSlotIndex + 1;
+									WriteChatf("Grabbing item in bank bag %d slot 0", Slot);
+									DoCommandf("/itemnotify in bank%d 0 leftmouseup", Slot);
+								}
+							}
+							break;
+							
+						case Loc_Bags:
+						case Loc_Equipped:
+							if (vResult.location.bagSlotIndex != -1) {
+								const int Slot = vResult.location.topSlotIndex - 22;
+								const int Slot2 = vResult.location.bagSlotIndex + 1;
+								DoCommandf("/itemnotify in pack%d %d leftmouseup", Slot, Slot2);
+							}
+							else {
+								const int Slot = vResult.location.topSlotIndex;
+								DoCommandf("/itemnotify %d leftmouseup", Slot);
+							}
+							break;
+							
+						//TODO: handle these.
+						case Loc_Item_Overflow:
+						case Loc_Real_Estate:
+						case Loc_Parcel:
+							break;
+						default:
+							//Shouldn't be here...
+							break;
+					}					
+				}
+				ImGui::SameLine();
+			}
 			std::string locStr = FormatLocation(vResult.location);
 			ImGui::TextUnformatted(locStr.c_str());
 
