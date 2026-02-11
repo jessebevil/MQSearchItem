@@ -726,17 +726,38 @@ static void PopulateListBoxes() {
 			}
 		}
 
-		//UniqueId for each listbox.
+		//Prepare the preview string
+		std::string previewValue = "";
+		for (auto& opt : data.OptionList) {
+			if (opt.IsSelected) {
+				if (!previewValue.empty()) previewValue += ", ";
+				previewValue += opt.Name;
+			}
+		}
+		if (previewValue.empty()) previewValue = "Select options...";
+
+		ImGui::SetNextItemWidth(ImGui::GetWindowWidth()-30);
+		//We're starting a combo box here - needs an EndCombo later, even if it's not in an if statement.
 		std::string internalID = "##List" + std::to_string(type);
-		if (ImGui::BeginListBox(internalID.c_str(), listBoxSize)) {
+		bool isOpened = ImGui::BeginCombo(internalID.c_str(), previewValue.c_str());
+
+		//tooltip for the closed combo box - will show all options that are currently selected.
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(previewValue.c_str());
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+
+		if (isOpened) {//We're only doing this bit if the combo box is open.
 			for (auto& opt : data.OptionList) {
-				//Render each item as a Selectable
-				//If it's clicked, it toggles its own bool directly
-				if (ImGui::Selectable(opt.Name.c_str(), opt.IsSelected)) {
+				//add option
+				if (ImGui::Selectable(opt.Name.c_str(), opt.IsSelected, ImGuiSelectableFlags_NoAutoClosePopups)) {
 					opt.IsSelected = !opt.IsSelected;
 				}
 
-				//Write the tooltip.
+				//this shows the individual entry - in case it's cut off when the dropdown is open.
 				if (ImGui::IsItemHovered()) {
 					ImGui::BeginTooltip();
 					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -745,8 +766,9 @@ static void PopulateListBoxes() {
 					ImGui::EndTooltip();
 				}
 			}
-			ImGui::EndListBox();
+			ImGui::EndCombo();
 		}
+
 		ImGui::Spacing();
 	}
 }
@@ -1972,7 +1994,9 @@ PLUGIN_API void OnUpdateImGui() {
 		ImGui::EndPopup();
 	}
 
-	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, ImGuiWindowFlags_HorizontalScrollbar);
+
+	ImGuiWindowFlags childflags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar;
+	ImGui::BeginChild("##FindItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, childflags);
 
 		ImGui::Text("Search:");
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
@@ -1994,7 +2018,7 @@ PLUGIN_API void OnUpdateImGui() {
 			}
 		}
 
-		ImGui::Text("Require Level");
+		ImGui::Text("Req. Lvl");
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 
 		if (ImGui::SmallButton("Clear##ReqLevel")) {
@@ -2012,7 +2036,7 @@ PLUGIN_API void OnUpdateImGui() {
 		ImGui::SetNextItemWidth(30);
 		ImGui::InputText("###MaxRequired", ReqMax, 12);
 
-		ImGui::Text("Reccomended Level");
+		ImGui::Text("Rec. Lvl");
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 
 		if (ImGui::SmallButton("Clear##RecLevel")) {
@@ -2411,16 +2435,16 @@ static std::string SanitizeFileName(const std::string& name) {
 			out += c;
 		}
 	}
-	
+
 	//trim spaces
 	while (!out.empty() && (out.back() == ' ' || out.back() == '.')) {
 		out.pop_back();
 	}
-	
+
 	if (out.empty()) {
 		out = "Search";
 	}
-	
+
 	return out;
 }
 
@@ -2464,7 +2488,7 @@ static bool SaveCurrentSearchToFile(const std::string& path) {
 		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
 		WritePrivateProfileString(section, "SelectedIDs", oss.str(), path);
 	}
-	
+
 	return true;
 }
 
@@ -2493,7 +2517,7 @@ static bool LoadSearchFromFile(const std::string& path) {
 				ids.push_back(GetIntFromString(token, 0));
 			}
 		}
-		
+
 		return ids;
 	};
 
@@ -2501,12 +2525,12 @@ static bool LoadSearchFromFile(const std::string& path) {
 		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
 		const std::string csv = GetPrivateProfileString(section, "SelectedIDs", "", path);
 		const auto ids = parseCsv(csv);
-		
+
 		//reset all first
 		for (auto& opt : data.OptionList) {
 			opt.IsSelected = false;
 		}
-		
+
 		for (const int id : ids) {
 			for (auto& opt : data.OptionList) {
 				if (opt.ID == id) { opt.IsSelected = true; break; }
@@ -2531,7 +2555,7 @@ static std::vector<std::string> ListSavedSearches() {
 	if (!fs::exists(dir, ec)) {
 		return names;
 	}
-	
+
 	for (const auto& entry : fs::directory_iterator(dir, ec)) {
 		if (entry.is_regular_file()) {
 			const auto& p = entry.path();
@@ -2540,7 +2564,7 @@ static std::vector<std::string> ListSavedSearches() {
 			}
 		}
 	}
-	
+
 	std::sort(names.begin(), names.end());
 	return names;
 }
