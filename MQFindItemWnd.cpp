@@ -2032,12 +2032,12 @@ PLUGIN_API void OnUpdateImGui() {
 
 		ImGui::Text("Min");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(30);
+		ImGui::SetNextItemWidth(35);
 		ImGui::InputText("###MinRequired", ReqMin, 12);
 		ImGui::SameLine();
 		ImGui::Text("Max");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(30);
+		ImGui::SetNextItemWidth(40);
 		ImGui::InputText("###MaxRequired", ReqMax, 12);
 
 		ImGui::Text("Rec. Lvl");
@@ -2050,12 +2050,12 @@ PLUGIN_API void OnUpdateImGui() {
 
 		ImGui::Text("Min");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(30);
+		ImGui::SetNextItemWidth(35);
 		ImGui::InputText("###MinReccomend", RecMin, 12);
 		ImGui::SameLine();
 		ImGui::Text("Max");
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(30);
+		ImGui::SetNextItemWidth(40);
 		ImGui::InputText("###MaxReccommend", RecMax, 12);
 
 		PopulateListBoxes();
