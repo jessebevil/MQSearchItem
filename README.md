@@ -1,4 +1,4 @@
-# MQFindItemWnd
+# MQSearchItem
 
 One Paragraph project description goes here
 
@@ -7,7 +7,7 @@ One Paragraph project description goes here
 Quick start instructions to get users up and going
 
 ```txt
-/plugin MQFindItemWnd
+/plugin MQSearchItem
 ```
 
 ### Commands
