@@ -2505,7 +2505,7 @@ static bool SaveCurrentSearchToFile(const std::string& path) {
 					oss << ',';
 				}
 				first = false;
-				oss << static_cast<unsigned int>(opt.ID);
+				oss << std::to_string(opt.ID);
 			}
 		}
 		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
