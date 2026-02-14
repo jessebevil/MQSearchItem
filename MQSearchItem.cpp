@@ -1890,7 +1890,7 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, grey.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, black.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_Tab, black.ToImU32());
-	ImGui::PushStyleColor(ImGuiCol_TabActive, grey.ToImU32());
+	ImGui::PushStyleColor(ImGuiCol_TabSelected, grey.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_TabHovered, grey.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_TitleBgActive, grey.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_Button, grey.ToImU32());
