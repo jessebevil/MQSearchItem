@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <sstream>
 #include <algorithm>
+#include <ranges>
 
 // Saved Searches helpers forward declarations (global scope)
 namespace fs = std::filesystem;
@@ -33,8 +34,8 @@ static void OutPutItemDetails(ItemPtr pItem, int topSlotIndex, int bagSlotIndex,
 struct Option {
 	std::string Name;
 	bool IsSelected = false;
-	int ID;
-	Option(std::string Name, const int ID) :Name(std::move(Name)), ID(ID) {}
+	uint8_t ID;
+	Option(std::string Name, const uint8_t ID) :Name(std::move(Name)), ID(ID) {}
 };
 
 /*
@@ -61,7 +62,7 @@ enum LocationID : uint8_t {
 };
 
 enum SlotID : uint8_t {
-	Slot_Charm = 1,
+	Slot_Charm,
 	Slot_LeftEar,
 	Slot_Head,
 	Slot_Face,
@@ -199,7 +200,7 @@ enum StatID : uint8_t {
 };
 
 enum RaceID : uint8_t {
-	Race_Human = 1,
+	Race_Human,
 	Race_Barbarian,
 	Race_Erudite,
 	Race_WoodElf,
@@ -240,7 +241,7 @@ static const char* szPlayerRaces[] = {
 #endif
 
 enum ClassID : uint8_t {
-	Class_Warrior = 1,
+	Class_Warrior,
 	Class_Cleric,
 	Class_Paladin,
 	Class_Ranger,
@@ -256,6 +257,26 @@ enum ClassID : uint8_t {
 	Class_Enchanter,
 	Class_Beastlord,
 	Class_Berserker
+};
+
+enum DeityID : uint8_t {
+	Deity_Agnostic,
+	Deity_Bertoxxulous,
+	Deity_Brell,
+	Deity_Cazic,
+	Deity_Erollisi,
+	Deity_Bristlebane,
+	Deity_Innoruuk,
+	Deity_Karana,
+	Deity_Mithaniel,
+	Deity_Prexus,
+	Deity_Quellious,
+	Deity_Rallos,
+	Deity_Rodcet,
+	Deity_Solusek,
+	Deity_Tribunal,
+	Deity_Tunare,
+	Deity_Veeshan
 };
 
 enum ItemTypeID : uint8_t {
@@ -360,7 +381,7 @@ enum PrestigeID {
 #endif
 
 enum AugSlotID : uint8_t {
-	Aug_1 = 1,
+	Aug_1,
 	Aug_2,
 	Aug_3,
 	Aug_4,
@@ -381,8 +402,6 @@ enum AugSlotID : uint8_t {
 	Aug_21
 };
 
-
-
 struct DropDownOption {
 	std::vector<Option> OptionList;
 };
@@ -394,6 +413,7 @@ enum OptionType : uint8_t {
 	OptionType_Race,
 	OptionType_Class,
 	OptionType_ItemType,
+	OptionType_Deity,
 #if (!IS_EMU_CLIENT)
 	OptionType_Prestige,
 #endif
@@ -407,6 +427,7 @@ static std::map<OptionType, std::string> DropDownOptions{
 	{OptionType_Race, "Races"},
 	{OptionType_Class, "Classes"},
 	{OptionType_ItemType, "Types"},
+	{OptionType_Deity, "Deity"},
 #if (!IS_EMU_CLIENT)
 	{OptionType_Prestige, "Prestige"},
 #endif
@@ -618,6 +639,26 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Throwing", ItemType_Throwing),
 			Option("Wind Instrument", ItemType_Wind_Instrument),
 	} } },
+	
+	{ OptionType_Deity, { {
+		Option("Agnostic", Deity_Agnostic),
+		Option("Bertoxxulous", Deity_Bertoxxulous),
+		Option("Brell Serilis", Deity_Brell),
+		Option("Bristlebane", Deity_Bristlebane),
+		Option("Cazic-Thule", Deity_Cazic),
+		Option("Erollisi Marr", Deity_Erollisi),
+		Option("Innoruuk", Deity_Innoruuk),
+		Option("Karana", Deity_Karana),
+		Option("Mithaniel Marr", Deity_Mithaniel),
+		Option("Prexus", Deity_Prexus),
+		Option("Quellious", Deity_Quellious),
+		Option("Rallos Zek", Deity_Rallos),
+		Option("Rodcet Nife", Deity_Rodcet),
+		Option("Solusek Ro", Deity_Solusek),
+		Option("The Tribunal", Deity_Tribunal),
+		Option("Tunare", Deity_Tunare),
+		Option("Veeshan", Deity_Veeshan),
+	} } },
 
 #if (!IS_EMU_CLIENT)
 	{ OptionType_Prestige, { {
@@ -782,122 +823,80 @@ static void PopulateListBoxes() {
 This will check if any of the options were selected in a category
 We can use that to determine if we should check the filters at all.
 */
-static bool IsAnySelected(const std::vector<Option>& OptionData) {
-	return std::ranges::any_of(OptionData, [](const Option& option) {
-		return option.IsSelected;
-	});
+template <typename T>
+static bool IsAnySelected(const T& container) {
+	return std::ranges::any_of(container, & Option::IsSelected);
 }
 
-static void GetMaskedValues(const int MaskedValue, const int MaxLoop, std::vector<int>& vOutVector) {
-	for (int i = 0; i < MaxLoop; i++) {
-		if (MaskedValue & (1 << i)) {
-			//i++;//Offset by 1
-			vOutVector.emplace_back(i + 1);
+static bool ValueFoundInMask(const int mask, const int id) {
+	//Safety check to prevent undefined behavior from shifting >= 32
+	if (id < 0 || id >= 32) {
+		return false;
+	}
+
+	return (mask & (1U << id)) != 0;
+}
+
+// static bool ValueFoundInMask(const uint64_t mask, const int id) {
+// 	if (id < 0 || id >= 64) {
+// 		return false;
+// 	}
+// 	
+// 	return (mask & (1ULL << id)) != 0;
+// }
+
+template <typename T>
+static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDefinition::*maskField) {
+	if (!pItem) {
+		return false;
+	}
+
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+	
+	const auto& optionData = MenuData[type].OptionList;
+
+	//If nothing is selected all results are valid.
+	if (!IsAnySelected(optionData)) {
+		return true;
+	}
+
+	// Access the specific mask from the item definition using the member pointer
+	// Syntax (pItemDef->*maskField) dynamically picks .Races, .Classes, etc.
+	const auto itemMask = pItemDef->*maskField;
+
+	for (const auto& option : optionData) {
+		if (option.IsSelected) {
+			if (ValueFoundInMask(itemMask, option.ID)) {
+				WriteChatf("Found: %s in mask", option.Name.c_str());
+				return true;
+			}
 		}
 	}
+
+	return false;
 }
 
 static bool MatchesRaces(const ItemClient* pItem) {
-	if (!pItem) {
-		return false;
-	}
-
-	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef) {
-		return false;
-	}
-
-	const auto& raceData = MenuData[OptionType_Race].OptionList;
-	const bool anyRaceSelected = IsAnySelected(raceData);
-
-	if (anyRaceSelected) {
-		bool matchfound = false;
-		std::vector<int> Races;
-		GetMaskedValues(pItemDef->Races, NUM_RACES, Races);
-		for (auto& option : raceData) {
-			if (option.IsSelected) {
-				auto it = std::find(Races.begin(), Races.end(), option.ID);
-				if (it != Races.end()) {
-					//Any debug logic before the true.
-					//WriteChatf("\ap%s\ax matches RaceID: %s OptionID: %s", pItem->GetItemDefinition()->Name, szPlayerRaces[*it], szPlayerRaces[option.ID]);
-					matchfound = true;//If one of the races is found, we don't need to check any others.
-					break;
-				}
-			}
-		}
-
-		return matchfound;
-	}
-
-	return true;
+	return MatchesMask(pItem, OptionType_Race, &ItemDefinition::Races);
 }
 
 static bool MatchesClasses(const ItemClient* pItem) {
-	if (!pItem) {
-		return false;
-	}
-
-	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef) {
-		return false;
-	}
-
-	const auto& classData = MenuData[OptionType_Class].OptionList;
-	const bool anyClassSelected = IsAnySelected(classData);
-
-	if (anyClassSelected) {
-		bool foundMatch = false;
-		std::vector<int> Classes;
-		GetMaskedValues(pItemDef->Classes, TotalPlayerClasses, Classes);
-		for (auto& option : classData) {
-			if (option.IsSelected) {
-				auto it = std::find(Classes.begin(), Classes.end(), option.ID);
-				if (it != Classes.end()) {
-					foundMatch = true;
-					break;//Only need to match one filter.
-				}
-			}
-		}
-
-		return foundMatch;
-	}
-
-	return true;
+	return MatchesMask(pItem, OptionType_Class, &ItemDefinition::Classes);
 }
 
 static bool MatchesSlots(const ItemClient* pItem) {
-	if (!pItem) {
-		return false;
-	}
+	return MatchesMask(pItem, OptionType_Slots, &ItemDefinition::EquipSlots);
+}
 
-	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef) {
-		return false;
-	}
+static bool MatchesAugSlots(const ItemClient* pItem) {
+	return MatchesMask(pItem, OptionType_AugSlots, &ItemDefinition::AugType);
+}
 
-	const auto& slotData = MenuData[OptionType_Slots].OptionList;
-	const bool anySlotSelected = IsAnySelected(slotData);
-
-	if (anySlotSelected) {
-		bool foundMatch = false;
-		std::vector<int> Slots;
-		GetMaskedValues(pItemDef->EquipSlots, NUM_WORN_ITEMS, Slots);
-		for (auto& option : slotData) {
-			if (option.IsSelected) {
-				//WriteChatf("Option: %s selected", option.Name);
-				auto it = std::find(Slots.begin(), Slots.end(), option.ID);
-				if (it != Slots.end()) {
-					foundMatch = true;
-					//WriteChatf("\a-tWorn Slot for: %s -> [%d]: %s", pItemDef->Name, *it, szItemSlot[*it]);
-					break;
-				}
-			}
-		}
-
-		return foundMatch;
-	}
-
-	return true;
+static bool MatchesDeities(const ItemClient* pItem) {
+	return MatchesMask(pItem, OptionType_Deity, &ItemDefinition::Deity);
 }
 
 static bool MatchesLevelRequirements(const ItemClient* pItem) {
@@ -1007,44 +1006,6 @@ static bool MatchesItemType(const ItemClient* pItem) {
 #endif
 
 		return foundMatch;
-	}
-
-	return true;
-}
-
-static bool MatchesAugSlots(const ItemClient* pItem) {
-	if (!pItem) {
-		return false;
-	}
-
-	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef) {
-		return false;
-	}
-
-	const auto& augSlotData = MenuData[OptionType_AugSlots].OptionList;
-	const bool anySlotSelected = IsAnySelected(augSlotData);
-
-	if (anySlotSelected) {
-		bool foundmatch = false;//We'll exclude automatically any item that isn't an augmentation.
-		//At least on EMU - Containers return that they are augmentation type sometimes.
-		if (pItem->GetItemClass() == ItemType_Augmentation && !pItem->IsContainer()) {
-			std::vector<int> vFitsSlots;
-			GetMaskedValues(pItemDef->AugType, 21, vFitsSlots);
-			for (auto& option : augSlotData) {
-				if (option.IsSelected) {
-					auto it = std::find(vFitsSlots.begin(), vFitsSlots.end(), option.ID);
-					if (it != vFitsSlots.end()) {
-						//Verify accuracy with the following output
-						//WriteChatf("pItem: \ap%s\ax Fits in Socket: %d", pItemDef->Name, *it);
-						foundmatch = true;//Doesn't fit in slot selected.
-						break;//only needs to match one option.
-					}
-				}
-			}
-		}
-
-		return foundmatch;
 	}
 
 	return true;
@@ -1511,8 +1472,8 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 	if (szSearchText[0] != '\0') {
 		std::string itemName = pItemDef->Name;
 		std::string searchText = szSearchText;
-		std::transform(itemName.begin(), itemName.end(), itemName.begin(), [](const unsigned char c) { return std::tolower(c); });
-		std::transform(searchText.begin(), searchText.end(), searchText.begin(), [](const unsigned char c) { return std::tolower(c); });
+		std::ranges::transform(itemName, itemName.begin(), [](const unsigned char c) { return std::tolower(c); });
+		std::ranges::transform(searchText, searchText.begin(), [](const unsigned char c) { return std::tolower(c); });
 
 		if (itemName.find(searchText) == std::string::npos) {
 			return false;
@@ -1564,6 +1525,13 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 	if (!MatchesItemType(pItem)) {
 #ifdef DEBUGGING
 		WriteChatf("\arExcluding: \ap%s\axin MatchesItemType(pItem)", pItemDef->Name);
+#endif
+		return false;
+	}
+	
+	if (!MatchesDeities(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesDeities", pItemDef->Deity);
 #endif
 		return false;
 	}
@@ -1931,8 +1899,8 @@ PLUGIN_API void OnUpdateImGui() {
 			strcpy_s(ReqMax, "255");
 			strcpy_s(RecMin, "0");
 			strcpy_s(RecMax, "255");
-			for (auto& [type, data] : MenuData) {
-				for (auto& opt : data.OptionList) {
+			for (auto& [OptionList] : MenuData | std::views::values) {
+				for (auto& opt : OptionList) {
 					opt.IsSelected = false;
 				}
 			}
@@ -2105,7 +2073,7 @@ PLUGIN_API void OnUpdateImGui() {
 		if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs()) {
 			if (sortSpecs->SpecsDirty) {
 				if (vResults.size() > 1) {
-					std::sort(vResults.begin(), vResults.end(), [&](const QueryResult& a, const QueryResult& b) {
+					std::ranges::sort(vResults, [&](const QueryResult& a, const QueryResult& b) {
 						for (int n = 0; n < sortSpecs->SpecsCount; n++) {
 							const ImGuiTableColumnSortSpecs* spec = &sortSpecs->Specs[n];
 
@@ -2270,7 +2238,7 @@ PLUGIN_API void OnUpdateImGui() {
 
 			// Dynamic Stat columns
 			int colIndex = 3;
-			for (const auto& [sid, label] : selectedStats) {
+			for (const auto& sid : selectedStats | std::views::keys) {
 				ImGui::TableSetColumnIndex(colIndex++);
 				//Everything is normally uint8_t, int, or char - For floats, exceptions are made.
 				switch (sid) {
@@ -2537,7 +2505,7 @@ static bool SaveCurrentSearchToFile(const std::string& path) {
 					oss << ',';
 				}
 				first = false;
-				oss << opt.ID;
+				oss << static_cast<unsigned int>(opt.ID);
 			}
 		}
 		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
