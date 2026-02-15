@@ -415,7 +415,8 @@ static std::map<OptionType, std::string> DropDownOptions{
 };
 
 static std::map<OptionType, DropDownOption> MenuData = {
-	{OptionType_Location, { {
+	{OptionType_Location, {
+		 .OptionList = {
 			Option("Bank", Loc_Bank),
 			Option("Shared Bank", Loc_Shared_Bank),
 			Option("Equipped", Loc_Equipped),
@@ -429,7 +430,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 #endif
 	} } },
 
-	{ OptionType_Slots, { {
+	{ OptionType_Slots, {
+		  .OptionList = {
 			Option("Ammo", Slot_Ammo),
 			Option("Arms", Slot_Arms),
 			Option("Back", Slot_Back),
@@ -455,7 +457,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			//Option("Wrist2", Slot_RightWrist),
 	} } },
 
-	{ OptionType_Stats, { {
+	{ OptionType_Stats, {
+		  .OptionList = {
 			Option("Armor Class", Stat_AC),
 			Option("Accuracy", Stat_Accuracy),
 			Option("Agility", Stat_AGI),
@@ -517,7 +520,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Wisdom", Stat_WIS),
 	} } },
 
-	{ OptionType_Race, { {
+	{ OptionType_Race, {
+		  .OptionList = {
 			Option("Barbarian", Race_Barbarian),
 			Option("Dark Elf", Race_DarkElf),
 			Option("Drakkin", Race_Drakkin),
@@ -536,7 +540,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Wood Elf", Race_WoodElf)
 	} } },
 
-	{ OptionType_Class, { {
+	{ OptionType_Class, {
+		  .OptionList = {
 			Option("Bard", Class_Bard),
 			Option("Beastlord", Class_Beastlord),
 			Option("Berserker", Class_Berserker),
@@ -555,7 +560,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Wizard", Class_Wizard)
 	} } },
 
-	{ OptionType_ItemType, { {
+	{ OptionType_ItemType, {
+		  .OptionList = {
 			Option("1H Blunt", ItemType_1H_Blunt),
 			Option("1H Piercing", ItemType_1H_Piercing),
 			Option("1H Slashing", ItemType_1H_Slashing),
@@ -620,7 +626,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Wind Instrument", ItemType_Wind_Instrument),
 	} } },
 	
-	{ OptionType_Deity, { {
+	{ OptionType_Deity, {
+		  .OptionList = {
 		Option("Agnostic", Deity_Agnostic),
 		Option("Bertoxxulous", Deity_Bertoxxulous),
 		Option("Brell Serilis", Deity_Brell),
@@ -647,7 +654,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 	} } },
 #endif
 
-	{ OptionType_AugSlots, { {
+	{ OptionType_AugSlots, {
+		  .OptionList = {
 			Option("1 (General: Single Stat)", Aug_1),
 			Option("2 (General: Multiple Stats)", Aug_2),
 			Option("3 (General: Spell Effect)", Aug_3),
@@ -669,7 +677,8 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("21 (Special Ornamentation)", Aug_21)
 	} } },
 	
-	{ OptionType_AugRestriction, { {
+	{ OptionType_AugRestriction, {
+		  .OptionList = {
 		Option("None", AugRestriction_None),
 		Option("1H Blunt Only", AugRestriction_1HBluntOnly),
 		Option("1H Only", AugRestriction_1HOnly),
@@ -829,18 +838,16 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 		return true;
 	}
 
-	for (const auto& option : optionData) {
-		if (option.IsSelected) {
-			if (ValueFoundInMask(itemMask, option.ID)) {
-#ifdef DEBUGGING
-				WriteChatf("Found: %s in mask", option.Name.c_str());
-#endif
-				return true;
-			}
+	return std::ranges::any_of(optionData, [&](const auto& option) {
+		if (option.IsSelected && ValueFoundInMask(itemMask, option.ID)) {
+	#ifdef DEBUGGING
+			WriteChatf("Found: %s in mask", option.Name.c_str());
+	#endif
+			return true;
 		}
-	}
-
-	return false;
+		
+		return false;
+	});
 }
 
 static bool MatchesRaces(const ItemClient* pItem) {
@@ -2535,7 +2542,7 @@ static std::vector<std::string> ListSavedSearches() {
 		}
 	}
 
-	std::sort(names.begin(), names.end());
+	std::ranges::sort(names);
 	return names;
 }
 
