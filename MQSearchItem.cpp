@@ -989,17 +989,6 @@ static bool MatchesItemType(const ItemClient* pItem) {
 		if (ItemType > 70) {//This outputs the itemtype of the item.
 			WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
 		}
-
-		//These output the ItemType from the szItemClasses array for both the ItemType and type for the option.ID
-		if (currentoption <= 70) {
-			if (!foundMatch) {
-				WriteChatf("\arItem: \ap%s\ax is \ayItemClass: \at%s\ax was looking for \a-t%s", pItemDef->Name, szItemClasses[ItemType], szItemClasses[currentoption]);
-			}
-			else {
-
-				WriteChatf("\agItem: \ap%s\ax is \ayItemClass: \at%s\ax was looking for \a-t%s", pItemDef->Name, szItemClasses[ItemType], szItemClasses[currentoption]);
-			}
-		}
 #endif
 
 		return foundMatch;
