@@ -1887,7 +1887,7 @@ PLUGIN_API void OnUpdateImGui() {
 
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::Button("Search")) {
-			EzCommand("/searchitem");
+			PopulateAllItems(pLocalPlayer, "");
 		}
 
 		//Reset all the options to defaults.
@@ -1976,7 +1976,9 @@ PLUGIN_API void OnUpdateImGui() {
 			szSearchText[0] = '\0';
 		}
 
-		ImGui::InputText("##SearchBox", szSearchText, IM_ARRAYSIZE(szSearchText));
+		if (ImGui::InputText("##SearchBox", szSearchText, IM_ARRAYSIZE(szSearchText), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			PopulateAllItems(pLocalPlayer, "");
+		}
 
 		if (ImGui::Checkbox("Only Droppable", &bOnlyShowDroppable)) {
 			if (bOnlyShowDroppable) {
