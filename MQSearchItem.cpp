@@ -173,28 +173,6 @@ enum RaceID : uint8_t {
 	Race_Drakkin
 };
 
-#ifdef DEBUGGING
-static const char* szPlayerRaces[] = {
-	"None",
-	"Human",
-	"Barbarian",
-	"Erudite",
-	"WoodElf",
-	"HighElf",
-	"DarkElf",
-	"HalfElf",
-	"Dwarf",
-	"Troll",
-	"Ogre",
-	"Halfling",
-	"Gnome",
-	"Iksar",
-	"VahShir",
-	"Froglok",
-	"Drakkin"
-};
-#endif
-
 enum ClassID : uint8_t {
 	Class_Warrior,
 	Class_Cleric,
@@ -313,7 +291,6 @@ enum ItemTypeID : uint8_t {
 	ItemType_Container,//pItem->IsContainer
 	ItemType_Focus_Effect,//pItem->Focus stuff
 	ItemType_Placeable,//pItem->Placable
-
 //#endif
 //Should probably add these to type.
 //Option("Attunable", Stat_Attuneable),//ItemType?
@@ -945,56 +922,32 @@ static bool MatchesItemType(const ItemClient* pItem) {
 	}
 
 	const auto& itemTypeData = MenuData[OptionType_ItemType].OptionList;
-	const bool anySlotSelected = IsAnySelected(itemTypeData);
-
-	if (anySlotSelected) {
-		bool foundMatch = false;
-#ifdef DEBUGGING
-		//Only needed for output when debugging. Otherwise we'd just return true when we found a match.
-		int currentoption = 0;
-#endif
-		const uint8_t ItemType = pItem->GetItemClass();
-		for (auto& option : itemTypeData) {
-			if (option.IsSelected) {
-#ifdef DEBUGGING
-				currentoption = option.ID;
-#endif
-
-				switch (option.ID) {
-					//Special consideration ItemTypes - where the results don't produce anything or as expected.
-					//We also can use this for custom entries - like "clickies"
-
-					case ItemType_Container://This actually doesn't produce all containers without this logic.
-						if (pItem->IsContainer()) {
-							foundMatch = true;
-						}
-
-						break;
-
-					default://By default we just want to check everything here.
-						if (ItemType == option.ID) {
-							foundMatch = true;
-						}
-
-						break;
-				}
-			}
-
-			if (foundMatch) {//We found a match - leave the for loop
-				break;
-			}
-		}
-
-#ifdef DEBUGGING
-		if (ItemType > 70) {//This outputs the itemtype of the item.
-			WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
-		}
-#endif
-
-		return foundMatch;
+	if (!IsAnySelected(itemTypeData)) {
+		return true;
 	}
-
-	return true;
+	
+	const uint8_t ItemType = pItem->GetItemClass();
+	
+	#ifdef DEBUGGING
+	if (ItemType > 70) {//This outputs the itemtype of the item.
+			WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
+	}
+	#endif
+	
+	return std::ranges::any_of(itemTypeData, [&](const Option& option) {
+		if (!option.IsSelected) {
+			return false;
+		}
+		
+		switch (option.ID) {
+			//Special consideration ItemTypes - where the results don't produce anything or as expected.
+			//We also can use this for custom entries - like "clickies"
+			case ItemType_Container:
+				return pItem->IsContainer();
+			default://By default we just want to check everything here.
+				return ItemType == option.ID;
+		}
+	});
 }
 
 static bool MatchesStats(const ItemClient* pItem) {
