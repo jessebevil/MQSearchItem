@@ -1,12 +1,12 @@
-// MQSearchItem.cpp : Defines the entry point for the DLL application.
+//MQSearchItem.cpp : Defines the entry point for the DLL application.
 //
 
-// PLUGIN_API is only to be used for callbacks.  All existing callbacks at this time
-// are shown below. Remove the ones your plugin does not use.  Always use Initialize
-// and Shutdown for setup and cleanup.
+//PLUGIN_API is only to be used for callbacks.  All existing callbacks at this time
+//are shown below. Remove the ones your plugin does not use.  Always use Initialize
+//and Shutdown for setup and cleanup.
 
-// ReSharper disable CppClangTidyReadabilityEnumInitialValue
-// ReSharper disable CppClangTidyBugproneBranchClone
+//ReSharper disable CppClangTidyReadabilityEnumInitialValue
+//ReSharper disable CppClangTidyBugproneBranchClone
 #include <mq/Plugin.h>
 #include <mq/imgui/Widgets.h>
 #include <filesystem>
@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <ranges>
 
-// Saved Searches helpers forward declarations (global scope)
+//Saved Searches helpers forward declarations (global scope)
 namespace fs = std::filesystem;
 static std::string SanitizeFileName(const std::string& name);
 static std::string GetSavedSearchesDir();
@@ -86,51 +86,6 @@ enum SlotID : uint8_t {
 	Slot_PowerSource,
 	Slot_Ammo,
 };
-
-#ifdef DEBUGGING
-static void TestFunc(ItemClient* pItem) {
-	// ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	//
-	// pItemDef->Cost;
-	// //pItemDef->eGMRequirement;
-	// pItemDef->bPoofOnDeath;
-
-#if (IS_EXPANSION_LEVEL(EXPANSION_LEVEL_SOR))
-	pItemDef->Collectible;
-#endif
-
-	// /*Is instrument?*/
-	// pItemDef->InstrumentType;
-	// pItemDef->InstrumentMod;
-	//
-	// /*Should we add a diety filter?*/
-	// pItemDef->Deity;//Definitely going to be bitmasked
-	//
-	// /*To search for magic items*/
-	// pItemDef->Magic;
-	//
-	// /*Delay maybe instead we should do ratio?*/
-	// pItemDef->Delay;
-	//
-	// pItemDef->Prestige;//This is for prestiege or not. I spelled that wrong. I know.
-	//
-	//
-	// pItemDef->ItemClass;//WTF is this?
-	//
-	// pItemDef->AugRestrictions;//We'll need to review this later - I believe it's an enum that's unmapped.
-	//
-	// //Unclear what to do with this information at the moment - Perhaps we want to find things with faction mods
-	// //Need more details
-	// pItemDef->FactionModType[0x4];
-	// pItemDef->FactionModValue[0x4];
-	// pItemDef->SpellData;//Should be used in ItemType to find items with a spell attached to it I think.
-	// pItemDef->Favor;
-	// pItemDef->GuildFavor;
-	// pItemDef->StackSize;//Going to use this for types?
-	// pItemDef->TrophyBenefitID;//Trophy - Type? Favor usage for tribute?
-
-}
-#endif
 
 enum StatID : uint8_t {
 	Stat_AC,
@@ -314,7 +269,7 @@ enum ItemTypeID : uint8_t {
 	ItemType_Book,//
 	ItemType_Note,//Test Me
 	ItemType_Key,//
-	ItemType_Ticket,// - No idea what this is for? Perhaps Shadowhaven gamble ticket?
+	ItemType_Ticket,//No idea what this is for? Perhaps Shadowhaven gamble ticket?
 	ItemType_2H_Piercing,//
 	ItemType_FishingPole,//Test Me
 	ItemType_FishingBait,//Test Me
@@ -361,7 +316,7 @@ enum ItemTypeID : uint8_t {
 
 //#endif
 //Should probably add these to type.
-// Option("Attunable", Stat_Attuneable),//ItemType?
+//Option("Attunable", Stat_Attuneable),//ItemType?
 //Option("Heirloom", Stat_Heirloom),//Both relevant and not - Itemtype?
 //Option("Summoned", Stat_Summoned),//ItemType?
 //Option("Tradeskill", Stat_TradeSkills),//Probably doesn't belong here. This is an itemtype question.
@@ -740,7 +695,7 @@ constexpr MQColor yellow_dark = { 153, 153, 0 };
 
 //light colors
 
-constexpr MQColor grey_light = { 166, 166, 166 }; // might want to make this MQColor(166, 166, 166); to match the others
+constexpr MQColor grey_light = { 166, 166, 166 };
 
 static bool bOnlyShowDroppable = false;
 static bool bOnlyShowNoDrop = false;
@@ -836,15 +791,6 @@ static bool ValueFoundInMask(const int mask, const int id) {
 
 	return (mask & (1U << id)) != 0;
 }
-
-// static bool ValueFoundInMask(const uint64_t mask, const int id) {
-// 	if (id < 0 || id >= 64) {
-// 		return false;
-// 	}
-// 	
-// 	return (mask & (1ULL << id)) != 0;
-// }
-
 template <typename T>
 static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDefinition::*maskField) {
 	if (!pItem) {
@@ -863,14 +809,21 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 		return true;
 	}
 
-	// Access the specific mask from the item definition using the member pointer
-	// Syntax (pItemDef->*maskField) dynamically picks .Races, .Classes, etc.
+	//Access the specific mask from the item definition using the member pointer
+	//Syntax (pItemDef->*maskField) dynamically picks .Races, .Classes, etc.
 	const auto itemMask = pItemDef->*maskField;
+	
+	//If there is no mask - then it's true. (Mainly applies to deities.)
+	if (itemMask == 0) {
+		return true;
+	}
 
 	for (const auto& option : optionData) {
 		if (option.IsSelected) {
 			if (ValueFoundInMask(itemMask, option.ID)) {
+#ifdef DEBUGGING
 				WriteChatf("Found: %s in mask", option.Name.c_str());
+#endif
 				return true;
 			}
 		}
@@ -896,6 +849,11 @@ static bool MatchesAugSlots(const ItemClient* pItem) {
 }
 
 static bool MatchesDeities(const ItemClient* pItem) {
+	// if (const ItemDefinition* pItemDef = pItem->GetItemDefinition()) {
+	// 	if (ci_equals(pItemDef->Name, "Draconic Aged Shield of Elders V")) {
+	// 		WriteChatf("%d", pItemDef->Deity);
+	// 	}
+	// }
 	return MatchesMask(pItem, OptionType_Deity, &ItemDefinition::Deity);
 }
 
@@ -908,8 +866,7 @@ static bool MatchesLevelRequirements(const ItemClient* pItem) {
 	if (!pItemDef) {
 		return false;
 	}
-
-
+	
 	if (const int val = GetIntFromString(ReqMin, 0)) {
 		if (pItemDef->RequiredLevel < val) {
 			return false;
@@ -1556,38 +1513,35 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 	return true;
 }
 
-/**
- * Avoid Globals if at all possible, since they persist throughout your program.
- * But if you must have them, here is the place to put them.
- */
 static bool ShowMQSearchItemWindow = true;
 struct LocationDetail {
 	LocationID loc;
-	// For top-level slot: inventory slot index for bags, bank/shared bank slot index, or worn slot index
-	int topSlotIndex = -1; // 0-based index as scanned
-	// If inside a container, this is the slot index within that container (0-based)
+	//For top-level slot: inventory slot index for bags, bank/shared bank slot index, or worn slot index
+	int topSlotIndex = -1; //0-based index as scanned
+	//If inside a container, this is the slot index within that container (0-based)
 	int bagSlotIndex = -1;
-	// Augment context
+	//Augment context
 	bool isAug = false;
-	int augSlotIndex = -1; // 0-based
-	std::string hostName; // name of the item containing this (for augs)
+	int augSlotIndex = -1; //0-based
+	std::string hostName; //name of the item containing this (for augs)
 };
+
 struct QueryResult {
 	ItemPtr item = nullptr;
 	LocationDetail location;
 };
+
 static std::vector<QueryResult> vResults;
-// During population, this indicates which location bucket we're scanning
+
+//During population, this indicates which location we're scanning
 static LocationID g_CurrentScanLocation = Loc_Bags;
 
 static void PopulateAllItems(PlayerClient* pChar, const char* szArgs);
 
-// Format a detailed, single-line location string per requirements
-static std::string FormatLocation(const LocationDetail& d)
-{
+//Format a single-line location string
+static std::string FormatLocation(const LocationDetail& d) {
 	auto baseLocToStr = [](const LocationID id) -> const char* {
-		switch (id)
-		{
+		switch (id) {
 			case Loc_Bank: return "Bank";
 			case Loc_Shared_Bank: return "Shared Bank";
 			case Loc_Equipped: return "Equipped";
@@ -1604,12 +1558,10 @@ static std::string FormatLocation(const LocationDetail& d)
 	};
 
 	std::string out;
-	if (d.loc == Loc_Bags)
-	{
-		out = ""; // We'll build it starting with Bag below
+	if (d.loc == Loc_Bags) {
+		out = "";
 	}
-	else if (d.loc == Loc_Equipped)
-	{
+	else if (d.loc == Loc_Equipped) {
 		auto getWornSlotName = [](const int slot) -> const char* {
 			switch (slot) {
 				case InvSlot_Charm: return "Charm";
@@ -1640,69 +1592,59 @@ static std::string FormatLocation(const LocationDetail& d)
 		};
 		out = getWornSlotName(d.topSlotIndex);
 	}
-	else
-	{
+	else {
 		out = baseLocToStr(d.loc);
 	}
 
-	// Compute human-friendly numbers (1-based) where applicable
+	//Compute user-friendly numbers (1-based)
 	auto oneBased = [](const int idx) { return idx >= 0 ? idx + 1 : -1; };
 
-	// Append top level slot/bag information
-	if (d.loc == Loc_Bank || d.loc == Loc_Shared_Bank)
-	{
-		if (d.bagSlotIndex >= 0 && d.topSlotIndex >= 0)
-		{
-			// Bank item inside a bag in a bank slot: "Bank - Bag Y Slot Z"
+	//Append top level slot/bag information
+	if (d.loc == Loc_Bank || d.loc == Loc_Shared_Bank) {
+		if (d.bagSlotIndex >= 0 && d.topSlotIndex >= 0) {
+			//Bank item inside a bag in a bank slot: "Bank - Bag Y Slot Z"
 			out += " - Bag ";
 			out += std::to_string(oneBased(d.topSlotIndex));
 			out += " Slot ";
 			out += std::to_string(oneBased(d.bagSlotIndex));
 		}
-		else if (d.topSlotIndex >= 0)
-		{
-			// Loose item directly in bank slot: "Bank - Slot X"
+		else if (d.topSlotIndex >= 0) {
+			//Loose item directly in bank slot: "Bank - Slot X"
 			out += " - Slot ";
 			out += std::to_string(oneBased(d.topSlotIndex));
 		}
 	}
-	else if (d.loc == Loc_Bags)
-	{
-		// Inventory bag slots: show Bag # and Slot # if inside a bag
-		if (d.bagSlotIndex >= 0)
-		{
+	else if (d.loc == Loc_Bags) {
+		//Inventory bag slots: show Bag # and Slot # if inside a bag
+		if (d.bagSlotIndex >= 0) {
 			out += "Bag ";
-			// Convert absolute inventory slot index to bag number (1-based)
-			// InvSlot_FirstBagSlot is the start of main inventory bag slots
+			//Convert absolute inventory slot index to bag number (1-based)
+			//InvSlot_FirstBagSlot is the start of main inventory bag slots
 			int bagNum = -1;
-			if (d.topSlotIndex >= 0)
-			{
+			if (d.topSlotIndex >= 0) {
 				bagNum = oneBased(d.topSlotIndex - InvSlot_FirstBagSlot);
 				if (bagNum < 1) {
 					bagNum = oneBased(d.topSlotIndex);
 				}
 			}
+			
 			out += std::to_string(bagNum);
 			out += " Slot ";
 			out += std::to_string(oneBased(d.bagSlotIndex));
 		}
 	}
-	else if (d.loc == Loc_Equipped)
-	{
-		if (d.bagSlotIndex >= 0)
-		{
+	else if (d.loc == Loc_Equipped) {
+		if (d.bagSlotIndex >= 0) {
 			out += " - Slot ";
 			out += std::to_string(oneBased(d.bagSlotIndex));
 		}
 	}
 
-	// Augment context appended at end
-	if (d.isAug)
-	{
+	//Augment context appended at end
+	if (d.isAug) {
 		out += " - Aug in ";
 		//out += d.hostName;
-		if (d.augSlotIndex >= 0)
-		{
+		if (d.augSlotIndex >= 0) {
 			out += " Slot ";
 			out += std::to_string(oneBased(d.augSlotIndex));
 		}
@@ -1711,13 +1653,11 @@ static std::string FormatLocation(const LocationDetail& d)
 	return out;
 }
 
-// Build list of selected stat IDs and their labels for dynamic columns
-static std::vector<std::pair<StatID, std::string>> GetSelectedStatColumns()
-{
+//Build list of selected stat IDs and their labels for dynamic columns
+static std::vector<std::pair<StatID, std::string>> GetSelectedStatColumns() {
 	std::vector<std::pair<StatID, std::string>> out;
 	const auto& statsData = MenuData[OptionType_Stats].OptionList;
-	for (const auto& opt : statsData)
-	{
+	for (const auto& opt : statsData) {
 		if (opt.IsSelected) {
 			out.emplace_back(static_cast<StatID>(opt.ID), opt.Name);
 		}
@@ -1737,7 +1677,7 @@ static float GetStatValueFloat(const ItemDefinition* def, const StatID stat) {
 	}
 }
 
-// Get numeric value for a given stat from an item definition
+//Get numeric value for a given stat from an item definition
 static int GetStatValue(const ItemDefinition* def, const StatID stat)
 {
 	if (!def) {
@@ -1818,10 +1758,8 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
  * This is called once on plugin initialization and can be considered the startup
  * routine for the plugin.
  */
-PLUGIN_API void InitializePlugin()
-{
+PLUGIN_API void InitializePlugin() {
 	AddCommand("/searchitem", PopulateAllItems);
-	// AddMQ2Data("mytlo", MyTLOData);
 }
 
 /**
@@ -1830,11 +1768,9 @@ PLUGIN_API void InitializePlugin()
  * This is called once when the plugin has been asked to shutdown.  The plugin has
  * not actually shut down until this completes.
  */
-PLUGIN_API void ShutdownPlugin()
-{
+PLUGIN_API void ShutdownPlugin() {
 	DebugSpewAlways("MQSearchItem::Shutting down");
 	RemoveCommand("/searchitem");
-	// RemoveMQ2Data("mytlo");
 }
 
 PLUGIN_API void OnUpdateImGui() {
@@ -1852,7 +1788,7 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(200.0f, 150.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 9);
-	// 5 push style Var; if we add more, make sure we pop
+	//5 push style Var; if we add more, make sure we pop
 	static constexpr int iPushPopVar = 5;
 
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, grey.ToImU32());
@@ -1865,11 +1801,10 @@ PLUGIN_API void OnUpdateImGui() {
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, grey.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, grey_dark.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_ResizeGrip, grey.ToImU32());
-	//Header is for Listbox (Ignore/Immune lists)
 	ImGui::PushStyleColor(ImGuiCol_Header, black.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, black.ToImU32());
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, black.ToImU32());
-	// 13 push style Color; if we add more, make sure we pop
+	//13 push style Color; if we add more, make sure we pop
 	static constexpr int iPushPopColor = 13;
 #pragma endregion Styles
 	static ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoFocusOnAppearing;
@@ -1942,7 +1877,7 @@ PLUGIN_API void OnUpdateImGui() {
 		ImGui::OpenPopup("SaveSearchPopup");
 	}
 
-	// Save popup
+	//Save popup
 	ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSizeConstraints(ImVec2(300, 0), ImVec2(600, FLT_MAX));
 	if (ImGui::BeginPopupModal("SaveSearchPopup")) {
@@ -2084,7 +2019,7 @@ PLUGIN_API void OnUpdateImGui() {
 							}
 
 							switch (spec->ColumnUserID) {
-								case 1: // Name
+								case 1: //Name
 								{
 									const int res = _stricmp(a.item->GetName(), b.item->GetName());
 									if (res != 0) {
@@ -2092,7 +2027,7 @@ PLUGIN_API void OnUpdateImGui() {
 									}
 								}
 									break;
-								case 2: // Location
+								case 2: //Location
 								{
 									const int res = _stricmp(FormatLocation(a.location).c_str(), FormatLocation(b.location).c_str());
 									if (res != 0) {
@@ -2100,7 +2035,7 @@ PLUGIN_API void OnUpdateImGui() {
 									}
 								}
 									break;
-								default: // Stats
+								default: //Stats
 									if (spec->ColumnUserID >= 3) {
 										const size_t statIdx = static_cast<size_t>(spec->ColumnUserID - 3);
 										if (statIdx < selectedStats.size()) {
@@ -2155,7 +2090,7 @@ PLUGIN_API void OnUpdateImGui() {
 
 			ImGui::TableNextRow();
 
-			// Icon
+			//Icon
 			ImGui::TableSetColumnIndex(0);
 			if (pTAItemIcon) {
 				static constexpr int iEQItemOffset = 500;
@@ -2165,7 +2100,7 @@ PLUGIN_API void OnUpdateImGui() {
 				mq::imgui::DrawTextureAnimation(pTAItemIcon.get(), CXSize(25, 25), true);
 			}
 
-			// Name (link)
+			//Name (link)
 			ImGui::TableSetColumnIndex(1);
 			if (imgui::ItemLinkText(item->GetName(), GetColorForChatColor(USERCOLOR_LINK))) {
 				char ItemLinkText[512] = { 0 };
@@ -2182,7 +2117,7 @@ PLUGIN_API void OnUpdateImGui() {
 				ImGui::EndTooltip();
 			}
 
-			// Location
+			//Location
 			ImGui::TableSetColumnIndex(2);
 			if (!vResult.location.isAug) {
 				char buf[128] = { 0 };
@@ -2238,7 +2173,7 @@ PLUGIN_API void OnUpdateImGui() {
 			std::string locStr = FormatLocation(vResult.location);
 			ImGui::TextUnformatted(locStr.c_str());
 
-			// Dynamic Stat columns
+			//Dynamic Stat columns
 			int colIndex = 3;
 			for (const auto& sid : selectedStats | std::views::keys) {
 				ImGui::TableSetColumnIndex(colIndex++);
@@ -2290,15 +2225,6 @@ PLUGIN_API void OnUpdateImGui() {
 
 	ImGui::EndChild();
 
-	//Left panel with drop downs and text search.
-	// Option to save a search (button)
-	// Option to load a search (drop down)
-	//Location
-	// Slot
-	//Stat
-	//Race
-	//Class
-	//Type
 	//Prestige? - !IS_EMU_CLIENT - !TestServer?
 
 
@@ -2379,58 +2305,6 @@ void OutPutItemDetails(ItemPtr pItem, const int topSlotIndex, const int bagSlotI
 
 	//Gets augs currently socketed in items.
 	GetContainedAugs(pItem.get(), topSlotIndex, bagSlotIndex);
-
-	return;
-
-	/*Everyting below this return in this function
-	* is a search for information and will be purged eventually
-	*/
-
-	//Evolving Items
-	///*0x10c*/ bool                  IsEvolvingItem;
-	// if (pItem->IsEvolvingItem) {
-	// 	//bool converted to const char array, int, int, double
-	// 	WriteChatf("Evolving Item Status: %s Level: %d/%d Exp: %2.2f", (pItem->EvolvingExpOn ? "On" : "Off"), pItem->EvolvingCurrentLevel, pItem->EvolvingMaxLevel, pItem->EvolvingExpPct);
-	// }
-	//
-	//
-	// //StackCount - This is how many are in a stack.
-	// if (pItem->IsStackable() && pItem->StackCount) {
-	// 	WriteChatf("Stackable to: %d Currently contains: %d", pItemDef->StackSize, pItem->StackCount);
-	// }
-	//
-	// for (uint8_t i = eqlib::ItemSpellType_Clicky; i < ItemSpellType_Max; i++) {
-	// 	eqlib::ItemSpellTypes currentType = static_cast<eqlib::ItemSpellTypes>(i);
-	// 	if (const ItemSpellData::SpellData* pSpellData = pItemDef->GetSpellData(currentType)) {
-	// 		EQ_Spell* pSpell = GetSpellByID(pSpellData->SpellID);
-	// 		if (!pSpell) {
-	// 			continue;
-	// 		}
-	//
-	// 		switch (currentType) {
-	// 			case ItemSpellType_Clicky:
-	// 				WriteChatf("Cliky Spell: %s CastTime: %2.2f Lvl Req: %hhu Charges: %d", pSpell->Name, pSpellData->CastTime * 0.001f, pSpellData->RequiredLevel, pItem->Charges);
-	// 				break;
-	// 			case ItemSpellType_Proc:
-	// 				WriteChatf("Proc: %s ProcRate: %d", pSpell->Name, pSpellData->ProcRate);
-	// 				break;
-	// 			case ItemSpellType_Worn:
-	// 				WriteChatf("Worn Spell: %s", pSpell->Name);
-	// 				break;
-	// 			case ItemSpellType_Focus:
-	// 				WriteChatf("Focus Spell: %s", pSpell->Name);
-	// 				break;
-	// 			case ItemSpellType_Scroll:
-	// 				break;
-	// 			case ItemSpellType_Focus2:
-	// 				WriteChatf("Secondary Spell: %s", pSpell->Name);
-	// 				break;
-	// 			default:
-	// 				WriteChatf("Unaccounted for ItemSpellType encountered i: %d", i);
-	// 		}
-	//
-	// 	}
-	// }
 }
 
 static bool bHadSearchResults = false;
@@ -2497,7 +2371,7 @@ static bool SaveCurrentSearchToFile(const std::string& path) {
 	WritePrivateProfileString("General", "RecMin", RecMin, path);
 	WritePrivateProfileString("General", "RecMax", RecMax, path);
 
-	// Menu selections
+	//Menu selections
 	for (auto& [type, data] : MenuData) {
 		std::ostringstream oss;
 		bool first = true;
@@ -2652,12 +2526,12 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 #if (!IS_EMU_CLIENT)
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_TradeSkillDepot].IsSelected) {
 		g_CurrentScanLocation = Loc_TradeSkillDepot;
-		// Populate later?
+		//Populate later?
 	}
 
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_DragonsHorde].IsSelected) {
 		g_CurrentScanLocation = Loc_DragonsHorde;
-		// Populate later?
+		//Populate later?
 	}
 #endif
 }
