@@ -381,6 +381,7 @@ enum AugRestrictID : uint8_t {
 
 struct DropDownOption {
 	std::vector<Option> OptionList;
+	bool IsEnabled = true;
 };
 
 enum OptionType : uint8_t {
@@ -687,53 +688,13 @@ static std::map<OptionType, DropDownOption> MenuData = {
 	} } },
 };
 
-#ifdef DEBUGGING
-static const char* szPlayerClasses[] = {
-	"None",
-	"Warrior",//1
-	"Cleric",//2
-	"Paladin",//3
-	"Ranger",//4
-	"Shadow Knight",//5
-	"Druid",//6
-	"Monk",//7
-	"Bard",//8
-	"Rogue",//9
-	"Shaman",//10
-	"Necromancer",//11
-	"Wizard",
-	"Mage",//13
-	"Enchanter",//14
-	"Beastlord",//15
-	"Berserker"//16
-};
-#endif
-
-constexpr MQColor light_blue = { 84, 172, 210 };
 constexpr MQColor grey = { 37, 37, 37 };
 constexpr MQColor black = { 12, 12, 12 };
-constexpr MQColor blue = { 0, 0, 255 };
-constexpr MQColor teal = { 0, 255, 255 };
-constexpr MQColor green = { 0, 255, 0 };
-constexpr MQColor magenta = { 255, 0, 255 };
-constexpr MQColor orange = { 255, 153, 0 };
-constexpr MQColor purple = { 128, 0, 128 };
-constexpr MQColor red = { 255, 0, 0 };
-constexpr MQColor white = { 255, 255, 255 };
-constexpr MQColor yellow = { 255, 255, 0 };
 
 //dark colors
-constexpr MQColor black_dark = { 12, 12, 12 };
-constexpr MQColor blue_dark = { 0, 0, 153 };
 constexpr MQColor grey_dark = { 28, 28, 28 };
-constexpr MQColor teal_dark = { 0, 153, 153 };
-constexpr MQColor green_dark = { 0, 153, 0 };
-constexpr MQColor magenta_dark = { 255, 0, 255 };
-constexpr MQColor orange_dark = { 153, 102, 0 };
-constexpr MQColor purple_dark = { 153, 0, 153 };
-constexpr MQColor red_dark = { 230, 0, 0 };
-constexpr MQColor white_dark = { 255, 255, 255 };
-constexpr MQColor yellow_dark = { 153, 153, 0 };
+constexpr MQColor green_dark = { 16, 105, 0 };
+constexpr MQColor red_dark = { 99, 0, 0 };
 
 //light colors
 
@@ -751,68 +712,72 @@ static char RecMax[12] = "255";
 static void PopulateListBoxes() {
 	for (auto& [type, data] : MenuData) {
 
-		//Label for this section
-		ImGui::Text("%s", DropDownOptions[type].c_str());
+		if (data.IsEnabled) {
+			//Label for this section
+			ImGui::Text("%s", DropDownOptions[type].c_str());
 
-		//Clear button for each listbox right aligned
-		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
-		std::string clearBtnLabel = "Clear##" + std::to_string(type);
-		if (ImGui::SmallButton(clearBtnLabel.c_str())) {
-			for (auto& opt : data.OptionList) {
-				opt.IsSelected = false;
+			//Clear button for each listbox right aligned
+			ImGui::SameLine(ImGui::GetWindowWidth() - 70);
+			std::string clearBtnLabel = "Clear##" + std::to_string(type);
+			
+			if (ImGui::SmallButton(clearBtnLabel.c_str())) {
+				for (auto& opt : data.OptionList) {
+					opt.IsSelected = false;
+				}
 			}
-		}
 
-		//Prepare the preview string
-		std::string previewValue;
-		for (const auto& opt : data.OptionList) {
-			if (opt.IsSelected) {
-				if (!previewValue.empty()) {
-					previewValue += ", ";
+			//Prepare the preview string
+			std::string previewValue;
+			for (const auto& opt : data.OptionList) {
+				if (opt.IsSelected) {
+					if (!previewValue.empty()) {
+						previewValue += ", ";
+					}
+
+					previewValue += opt.Name;
+				}
+			}
+
+			if (previewValue.empty()) {
+				previewValue = "Select options...";
+			}
+
+			ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 30);
+			//We're starting a combo box here - needs an EndCombo later, even if it's not in an if statement.
+			std::string internalID = "##List" + std::to_string(type);
+			const bool isOpened = ImGui::BeginCombo(internalID.c_str(), previewValue.c_str());
+
+			//tooltip for the closed combo box - will show all options that are currently selected.
+			if (ImGui::IsItemHovered()) {
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(previewValue.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+
+			if (isOpened) {//We're only doing this bit if the combo box is open.
+				for (auto& opt : data.OptionList) {
+					//add option
+					if (ImGui::Selectable(opt.Name.c_str(), opt.IsSelected, ImGuiSelectableFlags_NoAutoClosePopups)) {
+						opt.IsSelected = !opt.IsSelected;
+					}
+
+					//this shows the individual entry - in case it's cut off when the dropdown is open.
+					if (ImGui::IsItemHovered()) {
+						ImGui::BeginTooltip();
+						ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+						ImGui::TextUnformatted(opt.Name.c_str());
+						ImGui::PopTextWrapPos();
+						ImGui::EndTooltip();
+					}
 				}
 				
-				previewValue += opt.Name;
+				ImGui::EndCombo();
 			}
+			
+			ImGui::Spacing();
 		}
-		
-		if (previewValue.empty()) {
-			previewValue = "Select options...";
-		}
-
-		ImGui::SetNextItemWidth(ImGui::GetWindowWidth()-30);
-		//We're starting a combo box here - needs an EndCombo later, even if it's not in an if statement.
-		std::string internalID = "##List" + std::to_string(type);
-		const bool isOpened = ImGui::BeginCombo(internalID.c_str(), previewValue.c_str());
-
-		//tooltip for the closed combo box - will show all options that are currently selected.
-		if (ImGui::IsItemHovered()) {
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(previewValue.c_str());
-			ImGui::PopTextWrapPos();
-			ImGui::EndTooltip();
-		}
-
-		if (isOpened) {//We're only doing this bit if the combo box is open.
-			for (auto& opt : data.OptionList) {
-				//add option
-				if (ImGui::Selectable(opt.Name.c_str(), opt.IsSelected, ImGuiSelectableFlags_NoAutoClosePopups)) {
-					opt.IsSelected = !opt.IsSelected;
-				}
-
-				//this shows the individual entry - in case it's cut off when the dropdown is open.
-				if (ImGui::IsItemHovered()) {
-					ImGui::BeginTooltip();
-					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-					ImGui::TextUnformatted(opt.Name.c_str());
-					ImGui::PopTextWrapPos();
-					ImGui::EndTooltip();
-				}
-			}
-			ImGui::EndCombo();
-		}
-
-		ImGui::Spacing();
 	}
 }
 
@@ -837,6 +802,10 @@ template <typename T>
 static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDefinition::*maskField) {
 	if (!pItem) {
 		return false;
+	}
+
+	if (!MenuData[type].IsEnabled) {
+		return true;
 	}
 
 	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
@@ -893,6 +862,10 @@ static bool MatchesAugSlots(const ItemClient* pItem) {
 static bool MatchesRestrictions(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
+	}
+
+	if (!MenuData[OptionType_AugRestriction].IsEnabled) {
+		return true;
 	}
 	
 	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
@@ -1031,6 +1004,10 @@ static bool MatchesItemType(const ItemClient* pItem) {
 static bool MatchesStats(const ItemClient* pItem) {
 	if (!pItem) {
 		return false;
+	}
+
+	if (!MenuData[OptionType_Stats].IsEnabled) {
+		return true;
 	}
 
 	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
@@ -1723,6 +1700,11 @@ static std::string FormatLocation(const LocationDetail& d) {
 //Build list of selected stat IDs and their labels for dynamic columns
 static std::vector<std::pair<StatID, std::string>> GetSelectedStatColumns() {
 	std::vector<std::pair<StatID, std::string>> out;
+
+	if (!MenuData[OptionType_Stats].IsEnabled) {
+		return out;
+	}
+
 	const auto& statsData = MenuData[OptionType_Stats].OptionList;
 	for (const auto& opt : statsData) {
 		if (opt.IsSelected) {
@@ -1888,12 +1870,8 @@ PLUGIN_API void OnUpdateImGui() {
 	bool openSavePopup = false;
 
 	if (ImGui::BeginMenuBar()) {
-		if (ImGui::Button("Search")) {
-			PopulateAllItems(pLocalPlayer, "");
-		}
-
 		//Reset all the options to defaults.
-		if (ImGui::Button("Reset Options")) {
+		if (ImGui::SmallButton("Reset Options")) {
 			szSearchText[0] = '\0';
 			bOnlyShowDroppable = false;
 			bOnlyShowNoDrop = false;
@@ -1901,11 +1879,19 @@ PLUGIN_API void OnUpdateImGui() {
 			strcpy_s(ReqMax, "255");
 			strcpy_s(RecMin, "0");
 			strcpy_s(RecMax, "255");
-			for (auto& [OptionList] : MenuData | std::views::values) {
-				for (auto& opt : OptionList) {
+			for (auto& data : MenuData | std::views::values) {
+				data.IsEnabled = true;
+				for (auto& opt : data.OptionList) {
 					opt.IsSelected = false;
 				}
 			}
+		}
+
+		if (ImGui::BeginMenu("Categories")) {
+			for (auto& [type, data] : MenuData) {
+				ImGui::Checkbox(DropDownOptions[type].c_str(), &data.IsEnabled);
+			}
+			ImGui::EndMenu();
 		}
 
 		//Saved Searches menu
@@ -1972,12 +1958,16 @@ PLUGIN_API void OnUpdateImGui() {
 	static constexpr ImGuiWindowFlags childflags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::BeginChild("##SearchItemOptions", ImVec2(180, ImGui::GetContentRegionAvail().y), 0, childflags);
 
-		ImGui::Text("Search:");
+		if (ImGui::Button("Search")) {
+			PopulateAllItems(pLocalPlayer, "");
+		}
+
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 		if (ImGui::SmallButton("Clear##Search")) {
 			szSearchText[0] = '\0';
 		}
 
+		ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 30);
 		if (ImGui::InputText("##SearchBox", szSearchText, IM_ARRAYSIZE(szSearchText), ImGuiInputTextFlags_EnterReturnsTrue)) {
 			PopulateAllItems(pLocalPlayer, "");
 		}
@@ -2140,6 +2130,7 @@ PLUGIN_API void OnUpdateImGui() {
 						return false;
 						});
 				}
+				
 				sortSpecs->SpecsDirty = false;
 			}
 		}
@@ -2195,14 +2186,14 @@ PLUGIN_API void OnUpdateImGui() {
 					case Loc_Bank:
 					case Loc_Shared_Bank:
 						if (pBankWnd && pBankWnd->IsVisible()) {
-							ImGui::PushStyleColor(ImGuiCol_Button, blue_dark.ToImU32());//Bank is open
+							ImGui::PushStyleColor(ImGuiCol_Button, green_dark.ToImU32());//Bank is open
 						} else {
 							ImGui::PushStyleColor(ImGuiCol_Button, red_dark.ToImU32());//Bank isn't open
 						}
 						
 						break;
 					default:
-						ImGui::PushStyleColor(ImGuiCol_Button, blue_dark.ToImU32());
+						ImGui::PushStyleColor(ImGuiCol_Button, green_dark.ToImU32());
 				}
 				
 				if (ImGui::SmallButton(buf)) {
@@ -2255,9 +2246,11 @@ PLUGIN_API void OnUpdateImGui() {
 							break;
 					}					
 				}
+				
 				ImGui::PopStyleColor();//Pop button color
 				ImGui::SameLine();
 			}
+			
 			std::string locStr = FormatLocation(vResult.location);
 			ImGui::TextUnformatted(locStr.c_str());
 
@@ -2272,18 +2265,6 @@ PLUGIN_API void OnUpdateImGui() {
 						const float val = GetStatValueFloat(pItemDef, sid);
 						if (val != 0.0f) {
 							ImGui::Text("%2.3f", val);
-						}
-						else {
-							ImGui::TextUnformatted("");
-						}
-					}
-
-					break;
-					case Stat_Efficiency:
-					{
-						const int val = GetStatValue(pItemDef, sid);
-						if (val != 0) {
-							ImGui::Text("%d", val);
 						}
 						else {
 							ImGui::TextUnformatted("");
@@ -2474,6 +2455,7 @@ static bool SaveCurrentSearchToFile(const std::string& path) {
 		}
 		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
 		WritePrivateProfileString(section, "SelectedIDs", oss.str(), path);
+		WritePrivateProfileBool(section, "IsEnabled", data.IsEnabled, path);
 	}
 
 	return true;
@@ -2512,6 +2494,7 @@ static bool LoadSearchFromFile(const std::string& path) {
 		const std::string section = std::string("Type_") + std::to_string(static_cast<int>(type));
 		const std::string csv = GetPrivateProfileString(section, "SelectedIDs", "", path);
 		const auto ids = parseCsv(csv);
+		data.IsEnabled = GetPrivateProfileBool(section, "IsEnabled", true, path);
 
 		//reset all first
 		for (auto& opt : data.OptionList) {
@@ -2572,7 +2555,7 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 	vResults.clear();//Must clear this list or every time you hit find it just adds to it.
 
 	const auto& LocationData = MenuData[OptionType_Location].OptionList;
-	const bool anyLocationSelected = IsAnySelected(LocationData);
+	const bool anyLocationSelected = IsAnySelected(LocationData) && MenuData[OptionType_Location].IsEnabled;
 
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_Equipped].IsSelected) {
 		g_CurrentScanLocation = Loc_Equipped;
