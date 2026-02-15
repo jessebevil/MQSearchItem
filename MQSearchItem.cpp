@@ -2189,6 +2189,22 @@ PLUGIN_API void OnUpdateImGui() {
 			if (!vResult.location.isAug) {
 				char buf[128] = { 0 };
 				sprintf_s(buf, 128, "GrabItem##%s", FormatLocation(vResult.location).c_str());
+				
+				//Change color of button based on accesibility
+				switch (vResult.location.loc) {
+					case Loc_Bank:
+					case Loc_Shared_Bank:
+						if (pBankWnd && pBankWnd->IsVisible()) {
+							ImGui::PushStyleColor(ImGuiCol_Button, blue_dark.ToImU32());//Bank is open
+						} else {
+							ImGui::PushStyleColor(ImGuiCol_Button, red_dark.ToImU32());//Bank isn't open
+						}
+						
+						break;
+					default:
+						ImGui::PushStyleColor(ImGuiCol_Button, blue_dark.ToImU32());
+				}
+				
 				if (ImGui::SmallButton(buf)) {
 					if (pLocalPC->GetInventorySlot(InvSlot_Cursor)) {
 						DoCommand("/autoinv");
@@ -2239,6 +2255,7 @@ PLUGIN_API void OnUpdateImGui() {
 							break;
 					}					
 				}
+				ImGui::PopStyleColor();//Pop button color
 				ImGui::SameLine();
 			}
 			std::string locStr = FormatLocation(vResult.location);
