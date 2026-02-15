@@ -357,6 +357,28 @@ enum AugSlotID : uint8_t {
 	Aug_21
 };
 
+enum AugRestrictID : uint8_t {
+	AugRestriction_None,
+	AugRestriction_ArmorOnly,
+	AugRestriction_WeaponOnly,
+	AugRestriction_1HOnly,
+	AugRestriction_TwoHandedOnly,
+	AugRestriction_1HSlashingOnly,
+	AugRestriction_1HBluntOnly,
+	AugRestriction_1HPiercingOnly,
+	AugRestriction_HandToHandOnly,
+	AugRestriction_2HSlashOnly,
+	AugRestriction_2HBluntOnly,
+	AugRestriction_2HPierceOnly,
+	AugRestriction_BowOnly,
+	AugRestriction_ShieldOnly,
+	AugRestriction_1hSlash1hBluntOrHand2Hand,
+	AugRestriction_1HBluntOrHandToHand,
+	AugRestriction_Unknown16,
+	AugRestriction_Unknown17,
+	AugRestriction_Unknown18,
+};
+
 struct DropDownOption {
 	std::vector<Option> OptionList;
 };
@@ -372,7 +394,8 @@ enum OptionType : uint8_t {
 #if (!IS_EMU_CLIENT)
 	OptionType_Prestige,
 #endif
-	OptionType_AugSlots
+	OptionType_AugSlots,
+	OptionType_AugRestriction,
 };
 
 static std::map<OptionType, std::string> DropDownOptions{
@@ -386,7 +409,8 @@ static std::map<OptionType, std::string> DropDownOptions{
 #if (!IS_EMU_CLIENT)
 	{OptionType_Prestige, "Prestige"},
 #endif
-	{OptionType_AugSlots, "AugSlots"}
+	{OptionType_AugSlots, "AugSlots"},
+	{OptionType_AugRestriction, "Aug Restriction"}
 };
 
 static std::map<OptionType, DropDownOption> MenuData = {
@@ -642,7 +666,25 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("17 (Crafted: Raid)", Aug_17),
 			Option("20 (Ornamentation)", Aug_20),
 			Option("21 (Special Ornamentation)", Aug_21)
-	} } }
+	} } },
+	
+	{ OptionType_AugRestriction, { {
+		Option("None", AugRestriction_None),
+		Option("1H Blunt Only", AugRestriction_1HBluntOnly),
+		Option("1H Only", AugRestriction_1HOnly),
+		Option("1H Piercing Only", AugRestriction_1HPiercingOnly),
+		Option("1H Slash/Blunt or H2H Only", AugRestriction_1hSlash1hBluntOrHand2Hand),
+		Option("1H Slash Only", AugRestriction_1HSlashingOnly),
+		Option("2H Only", AugRestriction_TwoHandedOnly),
+		Option("2H Blunt Only", AugRestriction_2HBluntOnly),
+		Option("2H Pierce Only", AugRestriction_2HPierceOnly),
+		Option("2H Slash Only", AugRestriction_2HSlashOnly),
+		Option("Armor Only", AugRestriction_ArmorOnly),
+		Option("Bow Only", AugRestriction_BowOnly),
+		Option("Hand to Hand Only", AugRestriction_HandToHandOnly),
+		Option("ShieldOnly", AugRestriction_ShieldOnly),
+		Option("Weapon Only", AugRestriction_WeaponOnly),
+	} } },
 };
 
 #ifdef DEBUGGING
@@ -848,12 +890,30 @@ static bool MatchesAugSlots(const ItemClient* pItem) {
 	return MatchesMask(pItem, OptionType_AugSlots, &ItemDefinition::AugType);
 }
 
+static bool MatchesRestrictions(const ItemClient* pItem) {
+	if (!pItem) {
+		return false;
+	}
+	
+	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
+	if (!pItemDef) {
+		return false;
+	}
+	
+	const auto& optionData = MenuData[OptionType_AugRestriction].OptionList;
+
+	//If nothing is selected all results are valid.
+	if (!IsAnySelected(optionData)) {
+		return true;
+	}
+	
+	//Returns true if anything matches the lamda, otherwise false if empty or no match
+	return std::ranges::any_of(optionData, [&](const Option& option) {
+		return option.IsSelected && pItemDef->AugRestrictions == option.ID;
+	});
+}
+
 static bool MatchesDeities(const ItemClient* pItem) {
-	// if (const ItemDefinition* pItemDef = pItem->GetItemDefinition()) {
-	// 	if (ci_equals(pItemDef->Name, "Draconic Aged Shield of Elders V")) {
-	// 		WriteChatf("%d", pItemDef->Deity);
-	// 	}
-	// }
 	return MatchesMask(pItem, OptionType_Deity, &ItemDefinition::Deity);
 }
 
@@ -1499,6 +1559,13 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 #endif
 		return false;
 	}
+	
+	if (!MatchesRestrictions(pItem)) {
+#ifdef DEBUGGING
+		WriteChatf("\arExcluding: \ap%s\axin MatchesRestrictions(pItem)", pItemDef->Name);
+#endif
+		return false;
+	}
 
 	if (!MatchesStats(pItem)) {
 #ifdef DEBUGGING
@@ -2134,12 +2201,16 @@ PLUGIN_API void OnUpdateImGui() {
 								if (vResult.location.bagSlotIndex != -1) {
 									const int Slot = vResult.location.topSlotIndex + 1;
 									const int Slot2 = vResult.location.bagSlotIndex + 1;
+#ifdef DEBUGGING
 									WriteChatf("Grabbing item in bank bag %d slot %d", Slot, Slot2);
+#endif
 									DoCommandf("/itemnotify in bank%d %d leftmouseup", Slot, Slot2);
 								}
 								else {
 									const int Slot = vResult.location.topSlotIndex + 1;
+#ifdef DEBUGGING
 									WriteChatf("Grabbing item in bank bag %d slot 0", Slot);
+#endif
 									DoCommandf("/itemnotify in bank%d 0 leftmouseup", Slot);
 								}
 							}
