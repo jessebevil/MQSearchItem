@@ -1,9 +1,4 @@
 //MQSearchItem.cpp : Defines the entry point for the DLL application.
-//
-
-//PLUGIN_API is only to be used for callbacks.  All existing callbacks at this time
-//are shown below. Remove the ones your plugin does not use.  Always use Initialize
-//and Shutdown for setup and cleanup.
 
 //ReSharper disable CppClangTidyReadabilityEnumInitialValue
 //ReSharper disable CppClangTidyBugproneBranchClone
@@ -930,7 +925,7 @@ static bool MatchesItemType(const ItemClient* pItem) {
 	
 	#ifdef DEBUGGING
 	if (ItemType > 70) {//This outputs the itemtype of the item.
-			WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
+		WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
 	}
 	#endif
 	
@@ -951,11 +946,11 @@ static bool MatchesItemType(const ItemClient* pItem) {
 }
 
 static bool MatchesStats(const ItemClient* pItem) {
-	if (!pItem) {
-		return false;
-	}
-
-	if (!MenuData[OptionType_Stats].IsEnabled) {
+    if (!pItem) {
+	    return false;
+    }
+	
+    if (!MenuData[OptionType_Stats].IsEnabled) {
 	    return true;
     }
 
@@ -1395,6 +1390,7 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
 		default: return 0;
 	}
 }
+
 /**
  * @fn InitializePlugin
  *
@@ -1453,6 +1449,7 @@ PLUGIN_API void OnUpdateImGui() {
 	static ImGuiWindowFlags flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoFocusOnAppearing;
 
 	//Begin main window
+	ImGui::SetNextWindowSize(ImVec2(1100, 700), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("MQSearchItem", &ShowMQSearchItemWindow, flags)) {
 		ImGui::PopStyleVar(iPushPopVar);
 		ImGui::PopStyleColor(iPushPopColor);
@@ -1473,12 +1470,14 @@ PLUGIN_API void OnUpdateImGui() {
 			strcpy_s(ReqMax, "255");
 			strcpy_s(RecMin, "0");
 			strcpy_s(RecMax, "255");
-			for (auto& data : MenuData | std::views::values) {
+			
+			std::ranges::for_each(MenuData | std::views::values, [](auto& data) {
 				data.IsEnabled = true;
-				for (auto& opt : data.OptionList) {
+				
+				std::ranges::for_each(data.OptionList, [](auto& opt) {
 					opt.IsSelected = false;
-				}
-			}
+				});
+			});
 		}
 
 		if (ImGui::BeginMenu("Categories")) {
