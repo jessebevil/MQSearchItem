@@ -956,449 +956,94 @@ static bool MatchesStats(const ItemClient* pItem) {
 	}
 
 	if (!MenuData[OptionType_Stats].IsEnabled) {
-		return true;
-	}
-
-	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
-	if (!pItemDef) {
-		return false;
-	}
-
-	const auto& statsData = MenuData[OptionType_Stats].OptionList;
-	const bool anySlotSelected = IsAnySelected(statsData);
-
-	if (anySlotSelected) {
-		int hasStatCount = 0;
-		int optioncount = 0;
-
-		for (const auto& option : statsData) {
-			if (option.IsSelected) {
-				optioncount++;
-				switch (option.ID) {
-					case Stat_AC:
-						if (pItemDef->AC) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Accuracy:
-						if (pItemDef->Accuracy) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_AGI:
-						if (pItemDef->AGI) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Attack:
-						if (pItemDef->Attack) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Avoidance:
-						if (pItemDef->Avoidance) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_BackstabDamage:
-						if (pItemDef->BackstabDamage) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_CHA:
-						if (pItemDef->CHA) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Clairvoyance:
-						if (pItemDef->Clairvoyance) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_CombatEffects:
-						if (pItemDef->CombatEffects) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Damage:
-						if (pItemDef->Damage) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_DamageShield:
-						if (pItemDef->DamShield) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_DEX:
-						if (pItemDef->DEX) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_DmgBonus:
-						if (pItemDef->DmgBonusValue) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_DoTShielding:
-						if (pItemDef->DoTShielding) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_DSMitigation:
-						if (pItemDef->DamageShieldMitigation) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Efficiency:
-						if (pItemDef->Damage && pItemDef->Delay) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_ElementalDamage:
-						if (pItemDef->ElementalDamage) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Endurance:
-						if (pItemDef->Endurance) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_EnduranceRegen:
-						if (pItemDef->EnduranceRegen) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Favor:
-						if (pItemDef->Favor) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_GuildFavor:
-						if (pItemDef->GuildFavor) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Haste:
-						if (pItemDef->Haste) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HealAmount:
-						if (pItemDef->HealAmount) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicAgi:
-						if (pItemDef->HeroicAGI) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicCha:
-						if (pItemDef->HeroicCHA) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicCorruption:
-						if (pItemDef->HeroicSvCorruption) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicDex:
-						if (pItemDef->HeroicDEX) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicInt:
-						if (pItemDef->HeroicINT) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicPoison:
-						if (pItemDef->HeroicSvPoison) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicSta:
-						if (pItemDef->HeroicSTA) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicStr:
-						if (pItemDef->HeroicSTR) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicSvCold:
-						if (pItemDef->HeroicSvCold) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicSvDisease:
-						if (pItemDef->HeroicSvDisease) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicSvFire:
-						if (pItemDef->HeroicSvFire) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicSvMagic:
-						if (pItemDef->HeroicSvMagic) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HeroicWis:
-						if (pItemDef->HeroicWIS) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_HP:
-						if (pItemDef->HP) {
-							hasStatCount++;
-						}
-
-						break;
-
-
-					case Stat_HPRegen:
-						if (pItemDef->HPRegen) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_INT:
-						if (pItemDef->INT) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Mana:
-						if (pItemDef->Mana) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_ManaRegen:
-						if (pItemDef->ManaRegen) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Purity:
-						if (pItemDef->Purity) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Range:
-						if (pItemDef->Range) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Ratio:
-						if (pItemDef->Damage && pItemDef->Delay) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Shielding:
-						if (pItemDef->Shielding) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SpellDamage:
-						if (pItemDef->SpellDamage) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SpellShield:
-						if (pItemDef->SpellShield) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_STA:
-						if (pItemDef->STA) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_STR:
-						if (pItemDef->STR) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_StrikeThrough:
-						if (pItemDef->StrikeThrough) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_StunResist:
-						if (pItemDef->StunResist) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SvCold:
-						if (pItemDef->SvCold) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SvCorruption:
-						if (pItemDef->SvCorruption) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SvDisease:
-						if (pItemDef->SvDisease) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SvFire:
-						if (pItemDef->SvFire) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SvMagic:
-						if (pItemDef->SvMagic) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_SvPoison:
-						if (pItemDef->SvPoison) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_Weight:
-						if (pItemDef->Weight) {
-							hasStatCount++;
-						}
-
-						break;
-
-					case Stat_WIS:
-						if (pItemDef->WIS) {
-							hasStatCount++;
-						}
-
-						break;
-
-					default:
-						WriteChatf("Unaccounted for Option.ID (\ar%d\ax) in MatchesStats", option.ID);
-						break;
-				}
-			}
-		}
-		return hasStatCount == optioncount;
-	}
-
-	return true;
+	    return true;
+    }
+
+    const ItemDefinition* pDef = pItem->GetItemDefinition();
+    if (!pDef) {
+	    return false;
+    }
+
+    const auto& statsData = MenuData[OptionType_Stats].OptionList;
+    if (!IsAnySelected(statsData)) {
+	    return true;
+    }
+
+    //Returns true only if EVERY selected option is found on the item
+    return std::ranges::all_of(statsData, [&](const auto& option) {
+        if (!option.IsSelected) {
+	        return true;//Skip unselected
+        }
+
+        switch (option.ID) {
+            case Stat_AC:               return pDef->AC != 0;
+            case Stat_Accuracy:         return pDef->Accuracy != 0;
+            case Stat_AGI:              return pDef->AGI != 0;
+            case Stat_Attack:           return pDef->Attack != 0;
+            case Stat_Avoidance:        return pDef->Avoidance != 0;
+            case Stat_BackstabDamage:   return pDef->BackstabDamage != 0;
+            case Stat_CHA:              return pDef->CHA != 0;
+            case Stat_Clairvoyance:     return pDef->Clairvoyance != 0;
+            case Stat_CombatEffects:    return pDef->CombatEffects != 0;
+            case Stat_Damage:           return pDef->Damage != 0;
+            case Stat_DamageShield:     return pDef->DamShield != 0;
+            case Stat_DEX:              return pDef->DEX != 0;
+            case Stat_DmgBonus:         return pDef->DmgBonusValue != 0;
+            case Stat_DoTShielding:     return pDef->DoTShielding != 0;
+            case Stat_DSMitigation:     return pDef->DamageShieldMitigation != 0;
+            case Stat_ElementalDamage:  return pDef->ElementalDamage != 0;
+            case Stat_Endurance:        return pDef->Endurance != 0;
+            case Stat_EnduranceRegen:   return pDef->EnduranceRegen != 0;
+            case Stat_Favor:            return pDef->Favor != 0;
+            case Stat_GuildFavor:       return pDef->GuildFavor != 0;
+            case Stat_Haste:            return pDef->Haste != 0;
+            case Stat_HealAmount:       return pDef->HealAmount != 0;
+            case Stat_HeroicAgi:        return pDef->HeroicAGI != 0;
+            case Stat_HeroicCha:        return pDef->HeroicCHA != 0;
+            case Stat_HeroicCorruption: return pDef->HeroicSvCorruption != 0;
+            case Stat_HeroicDex:        return pDef->HeroicDEX != 0;
+            case Stat_HeroicInt:        return pDef->HeroicINT != 0;
+            case Stat_HeroicPoison:     return pDef->HeroicSvPoison != 0;
+            case Stat_HeroicSta:        return pDef->HeroicSTA != 0;
+            case Stat_HeroicStr:        return pDef->HeroicSTR != 0;
+            case Stat_HeroicSvCold:     return pDef->HeroicSvCold != 0;
+            case Stat_HeroicSvDisease:  return pDef->HeroicSvDisease != 0;
+            case Stat_HeroicSvFire:     return pDef->HeroicSvFire != 0;
+            case Stat_HeroicSvMagic:    return pDef->HeroicSvMagic != 0;
+            case Stat_HeroicWis:        return pDef->HeroicWIS != 0;
+            case Stat_HP:               return pDef->HP != 0;
+            case Stat_HPRegen:          return pDef->HPRegen != 0;
+            case Stat_INT:              return pDef->INT != 0;
+            case Stat_Mana:             return pDef->Mana != 0;
+            case Stat_ManaRegen:        return pDef->ManaRegen != 0;
+            case Stat_Purity:           return pDef->Purity != 0;
+            case Stat_Range:            return pDef->Range != 0;
+            case Stat_Shielding:        return pDef->Shielding != 0;
+            case Stat_SpellDamage:      return pDef->SpellDamage != 0;
+            case Stat_SpellShield:      return pDef->SpellShield != 0;
+            case Stat_STA:              return pDef->STA != 0;
+            case Stat_STR:              return pDef->STR != 0;
+            case Stat_StrikeThrough:    return pDef->StrikeThrough != 0;
+            case Stat_StunResist:       return pDef->StunResist != 0;
+            case Stat_SvCold:           return pDef->SvCold != 0;
+            case Stat_SvCorruption:     return pDef->SvCorruption != 0;
+            case Stat_SvDisease:        return pDef->SvDisease != 0;
+            case Stat_SvFire:           return pDef->SvFire != 0;
+            case Stat_SvMagic:          return pDef->SvMagic != 0;
+            case Stat_SvPoison:         return pDef->SvPoison != 0;
+            case Stat_Weight:           return pDef->Weight != 0;
+            case Stat_WIS:              return pDef->WIS != 0;
+        	
+        	//Combine these two.
+            case Stat_Efficiency:
+            case Stat_Ratio:
+                return (pDef->Damage != 0 && pDef->Delay != 0);
+
+            default:
+                WriteChatf("Unaccounted for Option.ID (\ar%d\ax) in MatchesStats", option.ID);
+                return false;
+        }
+    });
 }
 
 static bool DoesItemMatchFilters(const ItemClient* pItem) {
