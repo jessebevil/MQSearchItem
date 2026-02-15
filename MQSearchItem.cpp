@@ -2188,7 +2188,7 @@ PLUGIN_API void OnUpdateImGui() {
 			ImGui::TableSetColumnIndex(2);
 			if (!vResult.location.isAug) {
 				char buf[128] = { 0 };
-				sprintf_s(buf, 128, "GrabItem##%s", FormatLocation(vResult.location).c_str());
+				sprintf_s(buf, 128, "Grab Item##%s", FormatLocation(vResult.location).c_str());
 				
 				//Change color of button based on accesibility
 				switch (vResult.location.loc) {
