@@ -393,9 +393,10 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Shared Bank", Loc_Shared_Bank),
 			Option("Equipped", Loc_Equipped),
 			Option("Bags", Loc_Bags),
-			Option("Real Estates", Loc_Real_Estate),
-			Option("Item Overflow", Loc_Item_Overflow),
-			Option("Parcel", Loc_Parcel),
+		 	//Not yet implemented/looked into
+			// Option("Real Estates", Loc_Real_Estate),
+			// Option("Item Overflow", Loc_Item_Overflow),
+			// Option("Parcel", Loc_Parcel),
 #if (!IS_EMU_CLIENT)//Dragon Horde also?
 			Option("TradeSkill Depot", Loc_TradeSkillDepot),
 			Option("Dragons Horde", Loc_DragonsHorde)
