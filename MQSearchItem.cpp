@@ -685,10 +685,11 @@ constexpr MQColor grey_light = { 166, 166, 166 };
 static bool bOnlyShowDroppable = false;
 static bool bOnlyShowNoDrop = false;
 static char szSearchText[256] = "";
-static char ReqMin[12] = "0";
-static char ReqMax[12] = "255";
-static char RecMin[12] = "0";
-static char RecMax[12] = "255";
+// these need to be "int" rather than uint8_t due to imgui::inputint
+static int ReqMin = 0;
+static int ReqMax = 255;
+static int RecMin = 0;
+static int RecMax = 255;
 
 
 static void PopulateListBoxes() {
@@ -879,29 +880,21 @@ static bool MatchesLevelRequirements(const ItemClient* pItem) {
 	if (!pItemDef) {
 		return false;
 	}
-	
-	if (const int val = GetIntFromString(ReqMin, 0)) {
-		if (pItemDef->RequiredLevel < val) {
-			return false;
-		}
+
+	if (pItemDef->RequiredLevel < ReqMin) {
+		return false;
 	}
 
-	if (const int val = GetIntFromString(ReqMax, 0)) {
-		if (pItemDef->RequiredLevel > val) {
-			return false;
-		}
+	if (pItemDef->RequiredLevel > ReqMax) {
+		return false;
 	}
 
-	if (const int val = GetIntFromString(RecMin, 0)) {
-		if (pItemDef->RecommendedLevel < val) {
-			return false;
-		}
+	if (pItemDef->RecommendedLevel < RecMin) {
+		return false;
 	}
 
-	if (const int val = GetIntFromString(RecMax, 0)) {
-		if (pItemDef->RecommendedLevel > val) {
-			return false;
-		}
+	if (pItemDef->RecommendedLevel > RecMax) {
+		return false;
 	}
 
 	return true;
@@ -1467,14 +1460,14 @@ PLUGIN_API void OnUpdateImGui() {
 			szSearchText[0] = '\0';
 			bOnlyShowDroppable = false;
 			bOnlyShowNoDrop = false;
-			strcpy_s(ReqMin, "0");
-			strcpy_s(ReqMax, "255");
-			strcpy_s(RecMin, "0");
-			strcpy_s(RecMax, "255");
-			
+			ReqMin = 0;
+			ReqMax = 255;
+			RecMin = 0;
+			RecMax = 255;
+
 			std::ranges::for_each(MenuData | std::views::values, [](auto& data) {
 				data.IsEnabled = true;
-				
+
 				std::ranges::for_each(data.OptionList, [](auto& opt) {
 					opt.IsSelected = false;
 				});
@@ -1582,37 +1575,41 @@ PLUGIN_API void OnUpdateImGui() {
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 
 		if (ImGui::SmallButton("Clear##ReqLevel")) {
-			strcpy_s(ReqMin, "0");
-			strcpy_s(ReqMax, "255");
+			ReqMin = 0;
+			ReqMax = 255;
 		}
 
 		ImGui::Text("Min");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(35);
-		ImGui::InputText("###MinRequired", ReqMin, 12);
+		ImGui::InputInt("###MinRequired", &ReqMin);
+		ReqMin = std::clamp(ReqMin, 0, 255);
 		ImGui::SameLine();
 		ImGui::Text("Max");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(40);
-		ImGui::InputText("###MaxRequired", ReqMax, 12);
+		ImGui::InputInt("###MaxRequired", &ReqMax);
+		ReqMax = std::clamp(ReqMax, 0, 255);
 
 		ImGui::Text("Rec. Lvl");
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 
 		if (ImGui::SmallButton("Clear##RecLevel")) {
-			strcpy_s(RecMin, "0");
-			strcpy_s(RecMax, "255");
+			RecMin = 0;
+			RecMax = 255;
 		}
 
 		ImGui::Text("Min");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(35);
-		ImGui::InputText("###MinReccomend", RecMin, 12);
+		ImGui::InputInt("###MinRecommend", &RecMin);
+		RecMin = std::clamp(RecMin, 0, 255);
 		ImGui::SameLine();
 		ImGui::Text("Max");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(40);
-		ImGui::InputText("###MaxReccommend", RecMax, 12);
+		ImGui::InputInt("###MaxRecommend", &RecMax);
+		RecMax = std::clamp(RecMax, 0, 255);
 
 		PopulateListBoxes();
 
@@ -2029,10 +2026,10 @@ static bool SaveCurrentSearchToFile(const std::string& path) {
 	WritePrivateProfileString("General", "Search", szSearchText, path);
 	WritePrivateProfileBool("General", "OnlyDroppable", bOnlyShowDroppable, path);
 	WritePrivateProfileBool("General", "OnlyNoDrop", bOnlyShowNoDrop, path);
-	WritePrivateProfileString("General", "ReqMin", ReqMin, path);
-	WritePrivateProfileString("General", "ReqMax", ReqMax, path);
-	WritePrivateProfileString("General", "RecMin", RecMin, path);
-	WritePrivateProfileString("General", "RecMax", RecMax, path);
+	WritePrivateProfileInt("General", "ReqMin", ReqMin, path);
+	WritePrivateProfileInt("General", "ReqMax", ReqMax, path);
+	WritePrivateProfileInt("General", "RecMin", RecMin, path);
+	WritePrivateProfileInt("General", "RecMax", RecMax, path);
 
 	//Menu selections
 	for (auto& [type, data] : MenuData) {
@@ -2061,14 +2058,10 @@ static bool LoadSearchFromFile(const std::string& path) {
 	strcpy_s(szSearchText, sSearch.c_str());
 	bOnlyShowDroppable = GetPrivateProfileBool("General", "OnlyDroppable", false, path);
 	bOnlyShowNoDrop = GetPrivateProfileBool("General", "OnlyNoDrop", false, path);
-	const std::string reqMin = GetPrivateProfileString("General", "ReqMin", ReqMin, path);
-	const std::string reqMax = GetPrivateProfileString("General", "ReqMax", ReqMax, path);
-	const std::string recMin = GetPrivateProfileString("General", "RecMin", RecMin, path);
-	const std::string recMax = GetPrivateProfileString("General", "RecMax", RecMax, path);
-	strcpy_s(ReqMin, reqMin.c_str());
-	strcpy_s(ReqMax, reqMax.c_str());
-	strcpy_s(RecMin, recMin.c_str());
-	strcpy_s(RecMax, recMax.c_str());
+	ReqMin = GetPrivateProfileInt("General", "ReqMin", ReqMin, path);
+	ReqMax = GetPrivateProfileInt("General", "ReqMax", ReqMax, path);
+	RecMin = GetPrivateProfileInt("General", "RecMin", RecMin, path);
+	RecMax = GetPrivateProfileInt("General", "RecMax", RecMax, path);
 
 	//parse CSV selections
 	auto parseCsv = [](const std::string& csv) {
