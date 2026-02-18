@@ -372,28 +372,28 @@ enum OptionType : uint8_t {
 };
 
 static std::map<OptionType, std::string> DropDownOptions{
-	{OptionType_Location, "Location"},
-	{OptionType_Slots, "Slots"},
-	{OptionType_Stats, "Stats"},
-	{OptionType_Race, "Races"},
-	{OptionType_Class, "Classes"},
-	{OptionType_ItemType, "Types"},
-	{OptionType_Deity, "Deity"},
+	{ OptionType_Location, "Location" },
+	{ OptionType_Slots, "Slots" },
+	{ OptionType_Stats, "Stats" },
+	{ OptionType_Race, "Races" },
+	{ OptionType_Class, "Classes" },
+	{ OptionType_ItemType, "Types" },
+	{ OptionType_Deity, "Deity" },
 #if (!IS_EMU_CLIENT)
-	{OptionType_Prestige, "Prestige"},
+	{OptionType_Prestige, "Prestige" },
 #endif
-	{OptionType_AugSlots, "AugSlots"},
-	{OptionType_AugRestriction, "Aug Restriction"}
+	{ OptionType_AugSlots, "AugSlots" },
+	{ OptionType_AugRestriction, "Aug Restriction"}
 };
 
 static std::map<OptionType, DropDownOption> MenuData = {
-	{OptionType_Location, {
-		 .OptionList = {
+	{ OptionType_Location, {
+		.OptionList = {
 			Option("Bank", Loc_Bank),
 			Option("Shared Bank", Loc_Shared_Bank),
 			Option("Equipped", Loc_Equipped),
 			Option("Bags", Loc_Bags),
-		 	//Not yet implemented/looked into
+			//Not yet implemented/looked into
 			// Option("Real Estates", Loc_Real_Estate),
 			// Option("Item Overflow", Loc_Item_Overflow),
 			// Option("Parcel", Loc_Parcel),
@@ -401,10 +401,12 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("TradeSkill Depot", Loc_TradeSkillDepot),
 			Option("Dragons Horde", Loc_DragonsHorde)
 #endif
-	} } },
+			}
+		}
+	},
 
 	{ OptionType_Slots, {
-		  .OptionList = {
+		.OptionList = {
 			Option("Ammo", Slot_Ammo),
 			Option("Arms", Slot_Arms),
 			Option("Back", Slot_Back),
@@ -428,10 +430,12 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Waist", Slot_Waist),
 			Option("Wrist", Slot_LeftWrist),
 			//Option("Wrist2", Slot_RightWrist),
-	} } },
+			}
+		}
+	},
 
 	{ OptionType_Stats, {
-		  .OptionList = {
+		.OptionList = {
 			Option("Armor Class", Stat_AC),
 			Option("Accuracy", Stat_Accuracy),
 			Option("Agility", Stat_AGI),
@@ -491,10 +495,12 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Sv Poison", Stat_SvPoison),
 			Option("Weight", Stat_Weight),
 			Option("Wisdom", Stat_WIS),
-	} } },
+			}
+		}
+		},
 
 	{ OptionType_Race, {
-		  .OptionList = {
+		.OptionList = {
 			Option("Barbarian", Race_Barbarian),
 			Option("Dark Elf", Race_DarkElf),
 			Option("Drakkin", Race_Drakkin),
@@ -511,10 +517,12 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Troll", Race_Troll),
 			Option("Vah Shir", Race_VahShir),
 			Option("Wood Elf", Race_WoodElf)
-	} } },
+			}
+		}
+	},
 
 	{ OptionType_Class, {
-		  .OptionList = {
+		.OptionList = {
 			Option("Bard", Class_Bard),
 			Option("Beastlord", Class_Beastlord),
 			Option("Berserker", Class_Berserker),
@@ -531,10 +539,12 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Shaman", Class_Shaman),
 			Option("Warrior", Class_Warrior),
 			Option("Wizard", Class_Wizard)
-	} } },
+			}
+		}
+	},
 
 	{ OptionType_ItemType, {
-		  .OptionList = {
+		.OptionList = {
 			Option("1H Blunt", ItemType_1H_Blunt),
 			Option("1H Piercing", ItemType_1H_Piercing),
 			Option("1H Slashing", ItemType_1H_Slashing),
@@ -597,28 +607,32 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Stringed Instrument", ItemType_Stringed_Instrument),
 			Option("Throwing", ItemType_Throwing),
 			Option("Wind Instrument", ItemType_Wind_Instrument),
-	} } },
-	
+			}
+		}
+	},
+
 	{ OptionType_Deity, {
-		  .OptionList = {
-		Option("Agnostic", Deity_Agnostic),
-		Option("Bertoxxulous", Deity_Bertoxxulous),
-		Option("Brell Serilis", Deity_Brell),
-		Option("Bristlebane", Deity_Bristlebane),
-		Option("Cazic-Thule", Deity_Cazic),
-		Option("Erollisi Marr", Deity_Erollisi),
-		Option("Innoruuk", Deity_Innoruuk),
-		Option("Karana", Deity_Karana),
-		Option("Mithaniel Marr", Deity_Mithaniel),
-		Option("Prexus", Deity_Prexus),
-		Option("Quellious", Deity_Quellious),
-		Option("Rallos Zek", Deity_Rallos),
-		Option("Rodcet Nife", Deity_Rodcet),
-		Option("Solusek Ro", Deity_Solusek),
-		Option("The Tribunal", Deity_Tribunal),
-		Option("Tunare", Deity_Tunare),
-		Option("Veeshan", Deity_Veeshan),
-	} } },
+		.OptionList = {
+			Option("Agnostic", Deity_Agnostic),
+			Option("Bertoxxulous", Deity_Bertoxxulous),
+			Option("Brell Serilis", Deity_Brell),
+			Option("Bristlebane", Deity_Bristlebane),
+			Option("Cazic-Thule", Deity_Cazic),
+			Option("Erollisi Marr", Deity_Erollisi),
+			Option("Innoruuk", Deity_Innoruuk),
+			Option("Karana", Deity_Karana),
+			Option("Mithaniel Marr", Deity_Mithaniel),
+			Option("Prexus", Deity_Prexus),
+			Option("Quellious", Deity_Quellious),
+			Option("Rallos Zek", Deity_Rallos),
+			Option("Rodcet Nife", Deity_Rodcet),
+			Option("Solusek Ro", Deity_Solusek),
+			Option("The Tribunal", Deity_Tribunal),
+			Option("Tunare", Deity_Tunare),
+			Option("Veeshan", Deity_Veeshan),
+			}
+		}
+	},
 
 #if (!IS_EMU_CLIENT)
 	{ OptionType_Prestige, { {
@@ -628,7 +642,7 @@ static std::map<OptionType, DropDownOption> MenuData = {
 #endif
 
 	{ OptionType_AugSlots, {
-		  .OptionList = {
+		.OptionList = {
 			Option("1 (General: Single Stat)", Aug_1),
 			Option("2 (General: Multiple Stats)", Aug_2),
 			Option("3 (General: Spell Effect)", Aug_3),
@@ -648,26 +662,30 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("17 (Crafted: Raid)", Aug_17),
 			Option("20 (Ornamentation)", Aug_20),
 			Option("21 (Special Ornamentation)", Aug_21)
-	} } },
-	
+			}
+		}
+	},
+
 	{ OptionType_AugRestriction, {
-		  .OptionList = {
-		Option("None", AugRestriction_None),
-		Option("1H Blunt Only", AugRestriction_1HBluntOnly),
-		Option("1H Only", AugRestriction_1HOnly),
-		Option("1H Piercing Only", AugRestriction_1HPiercingOnly),
-		Option("1H Slash/Blunt or H2H Only", AugRestriction_1hSlash1hBluntOrHand2Hand),
-		Option("1H Slash Only", AugRestriction_1HSlashingOnly),
-		Option("2H Only", AugRestriction_TwoHandedOnly),
-		Option("2H Blunt Only", AugRestriction_2HBluntOnly),
-		Option("2H Pierce Only", AugRestriction_2HPierceOnly),
-		Option("2H Slash Only", AugRestriction_2HSlashOnly),
-		Option("Armor Only", AugRestriction_ArmorOnly),
-		Option("Bow Only", AugRestriction_BowOnly),
-		Option("Hand to Hand Only", AugRestriction_HandToHandOnly),
-		Option("ShieldOnly", AugRestriction_ShieldOnly),
-		Option("Weapon Only", AugRestriction_WeaponOnly),
-	} } },
+		.OptionList = {
+			Option("None", AugRestriction_None),
+			Option("1H Blunt Only", AugRestriction_1HBluntOnly),
+			Option("1H Only", AugRestriction_1HOnly),
+			Option("1H Piercing Only", AugRestriction_1HPiercingOnly),
+			Option("1H Slash/Blunt or H2H Only", AugRestriction_1hSlash1hBluntOrHand2Hand),
+			Option("1H Slash Only", AugRestriction_1HSlashingOnly),
+			Option("2H Only", AugRestriction_TwoHandedOnly),
+			Option("2H Blunt Only", AugRestriction_2HBluntOnly),
+			Option("2H Pierce Only", AugRestriction_2HPierceOnly),
+			Option("2H Slash Only", AugRestriction_2HSlashOnly),
+			Option("Armor Only", AugRestriction_ArmorOnly),
+			Option("Bow Only", AugRestriction_BowOnly),
+			Option("Hand to Hand Only", AugRestriction_HandToHandOnly),
+			Option("ShieldOnly", AugRestriction_ShieldOnly),
+			Option("Weapon Only", AugRestriction_WeaponOnly),
+			}
+		}
+	},
 };
 
 constexpr MQColor grey = { 37, 37, 37 };
@@ -702,7 +720,7 @@ static void PopulateListBoxes() {
 			//Clear button for each listbox right aligned
 			ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 			std::string clearBtnLabel = "Clear##" + std::to_string(type);
-			
+
 			if (ImGui::SmallButton(clearBtnLabel.c_str())) {
 				for (auto& opt : data.OptionList) {
 					opt.IsSelected = false;
@@ -755,10 +773,10 @@ static void PopulateListBoxes() {
 						ImGui::EndTooltip();
 					}
 				}
-				
+
 				ImGui::EndCombo();
 			}
-			
+
 			ImGui::Spacing();
 		}
 	}
@@ -795,7 +813,7 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 	if (!pItemDef) {
 		return false;
 	}
-	
+
 	const auto& optionData = MenuData[type].OptionList;
 
 	//If nothing is selected all results are valid.
@@ -806,7 +824,7 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 	//Access the specific mask from the item definition using the member pointer
 	//Syntax (pItemDef->*maskField) dynamically picks .Races, .Classes, etc.
 	const auto itemMask = pItemDef->*maskField;
-	
+
 	//If there is no mask - then it's true. (Mainly applies to deities.)
 	if (itemMask == 0) {
 		return true;
@@ -819,7 +837,7 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 	#endif
 			return true;
 		}
-		
+
 		return false;
 	});
 }
@@ -848,19 +866,19 @@ static bool MatchesRestrictions(const ItemClient* pItem) {
 	if (!MenuData[OptionType_AugRestriction].IsEnabled) {
 		return true;
 	}
-	
+
 	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
 	if (!pItemDef) {
 		return false;
 	}
-	
+
 	const auto& optionData = MenuData[OptionType_AugRestriction].OptionList;
 
 	//If nothing is selected all results are valid.
 	if (!IsAnySelected(optionData)) {
 		return true;
 	}
-	
+
 	//Returns true if anything matches the lamda, otherwise false if empty or no match
 	return std::ranges::any_of(optionData, [&](const Option& option) {
 		return option.IsSelected && pItemDef->AugRestrictions == option.ID;
@@ -914,20 +932,20 @@ static bool MatchesItemType(const ItemClient* pItem) {
 	if (!IsAnySelected(itemTypeData)) {
 		return true;
 	}
-	
+
 	const uint8_t ItemType = pItem->GetItemClass();
-	
+
 	#ifdef DEBUGGING
 	if (ItemType > 70) {//This outputs the itemtype of the item.
 		WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
 	}
 	#endif
-	
+
 	return std::ranges::any_of(itemTypeData, [&](const Option& option) {
 		if (!option.IsSelected) {
 			return false;
 		}
-		
+
 		switch (option.ID) {
 			//Special consideration ItemTypes - where the results don't produce anything or as expected.
 			//We also can use this for custom entries - like "clickies"
@@ -943,7 +961,7 @@ static bool MatchesStats(const ItemClient* pItem) {
     if (!pItem) {
 	    return false;
     }
-	
+
     if (!MenuData[OptionType_Stats].IsEnabled) {
 	    return true;
     }
@@ -1022,7 +1040,7 @@ static bool MatchesStats(const ItemClient* pItem) {
             case Stat_SvPoison:         return pDef->SvPoison != 0;
             case Stat_Weight:           return pDef->Weight != 0;
             case Stat_WIS:              return pDef->WIS != 0;
-        	
+
         	//Combine these two.
             case Stat_Efficiency:
             case Stat_Ratio:
@@ -1105,7 +1123,7 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 #endif
 		return false;
 	}
-	
+
 	if (!MatchesDeities(pItem)) {
 #ifdef DEBUGGING
 		WriteChatf("\arExcluding: \ap%s\axin MatchesDeities", pItemDef->Deity);
@@ -1119,7 +1137,7 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 #endif
 		return false;
 	}
-	
+
 	if (!MatchesRestrictions(pItem)) {
 #ifdef DEBUGGING
 		WriteChatf("\arExcluding: \ap%s\axin MatchesRestrictions(pItem)", pItemDef->Name);
@@ -1254,7 +1272,7 @@ static std::string FormatLocation(const LocationDetail& d) {
 					bagNum = oneBased(d.topSlotIndex);
 				}
 			}
-			
+
 			out += std::to_string(bagNum);
 			out += " Slot ";
 			out += std::to_string(oneBased(d.bagSlotIndex));
@@ -1721,7 +1739,7 @@ PLUGIN_API void OnUpdateImGui() {
 						return false;
 						});
 				}
-				
+
 				sortSpecs->SpecsDirty = false;
 			}
 		}
@@ -1771,7 +1789,7 @@ PLUGIN_API void OnUpdateImGui() {
 			if (!vResult.location.isAug) {
 				char buf[128] = { 0 };
 				sprintf_s(buf, 128, "Grab Item##%s", FormatLocation(vResult.location).c_str());
-				
+
 				//Change color of button based on accesibility
 				switch (vResult.location.loc) {
 					case Loc_Bank:
@@ -1781,17 +1799,17 @@ PLUGIN_API void OnUpdateImGui() {
 						} else {
 							ImGui::PushStyleColor(ImGuiCol_Button, red_dark.ToImU32());//Bank isn't open
 						}
-						
+
 						break;
 					default:
 						ImGui::PushStyleColor(ImGuiCol_Button, green_dark.ToImU32());
 				}
-				
+
 				if (ImGui::SmallButton(buf)) {
 					if (pLocalPC->GetInventorySlot(InvSlot_Cursor)) {
 						DoCommand("/autoinv");
 					}
-					
+
 					switch (vResult.location.loc) {
 						case Loc_Bank:
 						case Loc_Shared_Bank:
@@ -1813,7 +1831,7 @@ PLUGIN_API void OnUpdateImGui() {
 								}
 							}
 							break;
-							
+
 						case Loc_Bags:
 						case Loc_Equipped:
 							if (vResult.location.bagSlotIndex != -1) {
@@ -1826,7 +1844,7 @@ PLUGIN_API void OnUpdateImGui() {
 								DoCommandf("/itemnotify %d leftmouseup", Slot);
 							}
 							break;
-							
+
 						//TODO: handle these.
 						case Loc_Item_Overflow:
 						case Loc_Real_Estate:
@@ -1835,13 +1853,13 @@ PLUGIN_API void OnUpdateImGui() {
 						default:
 							//Shouldn't be here...
 							break;
-					}					
+					}
 				}
-				
+
 				ImGui::PopStyleColor();//Pop button color
 				ImGui::SameLine();
 			}
-			
+
 			std::string locStr = FormatLocation(vResult.location);
 			ImGui::TextUnformatted(locStr.c_str());
 
