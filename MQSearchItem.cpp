@@ -50,8 +50,11 @@ enum LocationID : uint8_t {
 	Loc_Real_Estate,
 	Loc_Item_Overflow,
 	Loc_Parcel,
-#if (!IS_EMU_CLIENT)
+
+#if HAS_TRADESKILL_DEPOT
 	Loc_TradeSkillDepot,
+#endif
+#if HAS_DRAGON_HOARD
 	Loc_DragonsHorde
 #endif
 };
@@ -397,8 +400,11 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			// Option("Real Estates", Loc_Real_Estate),
 			// Option("Item Overflow", Loc_Item_Overflow),
 			// Option("Parcel", Loc_Parcel),
-#if (!IS_EMU_CLIENT)//Dragon Horde also?
+#if HAS_TRADESKILL_DEPOT
 			Option("TradeSkill Depot", Loc_TradeSkillDepot),
+#endif
+
+#if HAS_DRAGON_HOARD
 			Option("Dragons Horde", Loc_DragonsHorde)
 #endif
 			}
@@ -1194,8 +1200,10 @@ static std::string FormatLocation(const LocationDetail& d) {
 			case Loc_Real_Estate: return "Real Estate";
 			case Loc_Item_Overflow: return "Item Overflow";
 			case Loc_Parcel: return "Parcel";
-#if (!IS_EMU_CLIENT)
+#if HAS_TRADESKILL_DEPOT
 			case Loc_TradeSkillDepot: return "Tradeskill Depot";
+#endif
+#if HAS_DRAGON_HOARD
 			case Loc_DragonsHorde: return "Dragon's Hoard";
 #endif
 			default: return "Unknown";
@@ -2199,12 +2207,13 @@ void PopulateAllItems(PlayerClient* pChar, const char* szArgs) {
 		}
 	}
 
-#if (!IS_EMU_CLIENT)
+#if HAS_TRADESKILL_DEPOT
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_TradeSkillDepot].IsSelected) {
 		g_CurrentScanLocation = Loc_TradeSkillDepot;
 		//Populate later?
 	}
-
+#endif
+#if HAS_DRAGON_HOARD
 	if (!anyLocationSelected || MenuData[OptionType_Location].OptionList[Loc_DragonsHorde].IsSelected) {
 		g_CurrentScanLocation = Loc_DragonsHorde;
 		//Populate later?
