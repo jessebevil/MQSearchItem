@@ -439,20 +439,35 @@ static std::map<OptionType, DropDownOption> MenuData = {
 	{ OptionType_Stats, {
 		  .OptionList = {
 			Option("Armor Class", Stat_AC),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Accuracy", Stat_Accuracy),
+#endif
 			Option("Agility", Stat_AGI),
 			Option("Attack", Stat_Attack),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Avoidance", Stat_Avoidance),
+#endif
 			Option("Backstab Damage", Stat_BackstabDamage),
 			Option("Charisma", Stat_CHA),
 			Option("Clairvoyance", Stat_Clairvoyance),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Combat Effects", Stat_CombatEffects),
+#endif
 			Option("Damage", Stat_Damage),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Damage Shield", Stat_DamageShield),
+#endif
 			Option("Dexterity", Stat_DEX),
 			Option("Damage Bonus", Stat_DmgBonus),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("DoT Shielding", Stat_DoTShielding),
 			Option("DS Mitigation", Stat_DSMitigation),
+#endif
 			Option("Efficiency", Stat_Efficiency),
 			Option("Elemental Dmg", Stat_ElementalDamage),
 			Option("Endurance", Stat_Endurance),
@@ -463,16 +478,25 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Heal Amount", Stat_HealAmount),
 			Option("Heroic AGI", Stat_HeroicAgi),
 			Option("Heroic CHA", Stat_HeroicCha),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Heroic Sv Corruption", Stat_HeroicCorruption),
+#endif
 			Option("Heroic Dex", Stat_HeroicDex),
 			Option("Heroic Int", Stat_HeroicInt),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Heroic Sv Poison", Stat_HeroicPoison),
+#endif
 			Option("Heroic STA", Stat_HeroicSta),
 			Option("Heroic STR", Stat_HeroicStr),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Heroic SvCold", Stat_HeroicSvCold),
 			Option("Heroic SvDisease", Stat_HeroicSvDisease),
 			Option("Heroic SvFire", Stat_HeroicSvFire),
 			Option("Heroic SvMagic", Stat_HeroicSvMagic),
+#endif
 			Option("Heroic WIS", Stat_HeroicWis),
 			Option("Hitpoints", Stat_HP),
 			Option("HP Regen", Stat_HPRegen),
@@ -482,13 +506,22 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Purity", Stat_Purity),
 			Option("Range", Stat_Range),
 			Option("Ratio", Stat_Ratio),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Shielding", Stat_Shielding),
+#endif
 			Option("Spell Damage", Stat_SpellDamage),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("Spell Shielding", Stat_SpellShield),
+#endif
 			Option("Stamina", Stat_STA),
 			Option("Strength", Stat_STR),
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 			Option("StrikeThrough", Stat_StrikeThrough),
 			Option("Stun Resist", Stat_StunResist),
+#endif
 			Option("Sv Cold", Stat_SvCold),
 			Option("Sv Corruption", Stat_SvCorruption),
 			Option("Sv Disease", Stat_SvDisease),
@@ -604,7 +637,7 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("Throwing", ItemType_Throwing),
 			Option("Wind Instrument", ItemType_Wind_Instrument),
 	} } },
-	
+
 	{ OptionType_Deity, {
 		  .OptionList = {
 		Option("Agnostic", Deity_Agnostic),
@@ -655,7 +688,7 @@ static std::map<OptionType, DropDownOption> MenuData = {
 			Option("20 (Ornamentation)", Aug_20),
 			Option("21 (Special Ornamentation)", Aug_21)
 	} } },
-	
+
 	{ OptionType_AugRestriction, {
 		  .OptionList = {
 		Option("None", AugRestriction_None),
@@ -707,7 +740,7 @@ static void PopulateListBoxes() {
 			//Clear button for each listbox right aligned
 			ImGui::SameLine(ImGui::GetWindowWidth() - 70);
 			std::string clearBtnLabel = "Clear##" + std::to_string(type);
-			
+
 			if (ImGui::SmallButton(clearBtnLabel.c_str())) {
 				for (auto& opt : data.OptionList) {
 					opt.IsSelected = false;
@@ -760,10 +793,10 @@ static void PopulateListBoxes() {
 						ImGui::EndTooltip();
 					}
 				}
-				
+
 				ImGui::EndCombo();
 			}
-			
+
 			ImGui::Spacing();
 		}
 	}
@@ -800,7 +833,7 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 	if (!pItemDef) {
 		return false;
 	}
-	
+
 	const auto& optionData = MenuData[type].OptionList;
 
 	//If nothing is selected all results are valid.
@@ -811,7 +844,7 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 	//Access the specific mask from the item definition using the member pointer
 	//Syntax (pItemDef->*maskField) dynamically picks .Races, .Classes, etc.
 	const auto itemMask = pItemDef->*maskField;
-	
+
 	//If there is no mask - then it's true. (Mainly applies to deities.)
 	if (itemMask == 0) {
 		return true;
@@ -824,7 +857,7 @@ static bool MatchesMask(const ItemClient* pItem, const OptionType type, T ItemDe
 	#endif
 			return true;
 		}
-		
+
 		return false;
 	});
 }
@@ -853,19 +886,19 @@ static bool MatchesRestrictions(const ItemClient* pItem) {
 	if (!MenuData[OptionType_AugRestriction].IsEnabled) {
 		return true;
 	}
-	
+
 	const ItemDefinition* pItemDef = pItem->GetItemDefinition();
 	if (!pItemDef) {
 		return false;
 	}
-	
+
 	const auto& optionData = MenuData[OptionType_AugRestriction].OptionList;
 
 	//If nothing is selected all results are valid.
 	if (!IsAnySelected(optionData)) {
 		return true;
 	}
-	
+
 	//Returns true if anything matches the lamda, otherwise false if empty or no match
 	return std::ranges::any_of(optionData, [&](const Option& option) {
 		return option.IsSelected && pItemDef->AugRestrictions == option.ID;
@@ -885,7 +918,7 @@ static bool MatchesLevelRequirements(const ItemClient* pItem) {
 	if (!pItemDef) {
 		return false;
 	}
-	
+
 	if (const int val = GetIntFromString(ReqMin, 0)) {
 		if (pItemDef->RequiredLevel < val) {
 			return false;
@@ -927,20 +960,20 @@ static bool MatchesItemType(const ItemClient* pItem) {
 	if (!IsAnySelected(itemTypeData)) {
 		return true;
 	}
-	
+
 	const uint8_t ItemType = pItem->GetItemClass();
-	
+
 	#ifdef DEBUGGING
 	if (ItemType > 70) {//This outputs the itemtype of the item.
 		WriteChatf("ItemType for \ap%s\ax was \ar%hhu", pItemDef->Name, ItemType);
 	}
 	#endif
-	
+
 	return std::ranges::any_of(itemTypeData, [&](const Option& option) {
 		if (!option.IsSelected) {
 			return false;
 		}
-		
+
 		switch (option.ID) {
 			//Special consideration ItemTypes - where the results don't produce anything or as expected.
 			//We also can use this for custom entries - like "clickies"
@@ -956,7 +989,7 @@ static bool MatchesStats(const ItemClient* pItem) {
     if (!pItem) {
 	    return false;
     }
-	
+
     if (!MenuData[OptionType_Stats].IsEnabled) {
 	    return true;
     }
@@ -978,21 +1011,34 @@ static bool MatchesStats(const ItemClient* pItem) {
         }
 
         switch (option.ID) {
-            case Stat_AC:               return pDef->AC != 0;
-            case Stat_Accuracy:         return pDef->Accuracy != 0;
+#if __ClientDate <= 20160518u
+			//These stats are not a thing on live - Check for date this was changed.
+			case Stat_Accuracy:         return pDef->Accuracy != 0;
+			case Stat_Avoidance:        return pDef->Avoidance != 0;
+			case Stat_CombatEffects:    return pDef->CombatEffects != 0;
+			case Stat_DamageShield:     return pDef->DamShield != 0;
+			case Stat_DoTShielding:     return pDef->DoTShielding != 0;
+			case Stat_DSMitigation:     return pDef->DamageShieldMitigation != 0;
+			case Stat_HeroicCorruption: return pDef->HeroicSvCorruption != 0;
+			case Stat_HeroicPoison:     return pDef->HeroicSvPoison != 0;
+			case Stat_HeroicSvCold:     return pDef->HeroicSvCold != 0;
+			case Stat_HeroicSvDisease:  return pDef->HeroicSvDisease != 0;
+			case Stat_HeroicSvFire:     return pDef->HeroicSvFire != 0;
+			case Stat_HeroicSvMagic:    return pDef->HeroicSvMagic != 0;
+			case Stat_Shielding:        return pDef->Shielding != 0;
+			case Stat_SpellShield:      return pDef->SpellShield != 0;
+			case Stat_StrikeThrough:    return pDef->StrikeThrough != 0;
+			case Stat_StunResist:       return pDef->StunResist != 0;
+#endif
+			case Stat_AC:               return pDef->AC != 0;
             case Stat_AGI:              return pDef->AGI != 0;
             case Stat_Attack:           return pDef->Attack != 0;
-            case Stat_Avoidance:        return pDef->Avoidance != 0;
             case Stat_BackstabDamage:   return pDef->BackstabDamage != 0;
             case Stat_CHA:              return pDef->CHA != 0;
             case Stat_Clairvoyance:     return pDef->Clairvoyance != 0;
-            case Stat_CombatEffects:    return pDef->CombatEffects != 0;
             case Stat_Damage:           return pDef->Damage != 0;
-            case Stat_DamageShield:     return pDef->DamShield != 0;
             case Stat_DEX:              return pDef->DEX != 0;
             case Stat_DmgBonus:         return pDef->DmgBonusValue != 0;
-            case Stat_DoTShielding:     return pDef->DoTShielding != 0;
-            case Stat_DSMitigation:     return pDef->DamageShieldMitigation != 0;
             case Stat_ElementalDamage:  return pDef->ElementalDamage != 0;
             case Stat_Endurance:        return pDef->Endurance != 0;
             case Stat_EnduranceRegen:   return pDef->EnduranceRegen != 0;
@@ -1002,16 +1048,10 @@ static bool MatchesStats(const ItemClient* pItem) {
             case Stat_HealAmount:       return pDef->HealAmount != 0;
             case Stat_HeroicAgi:        return pDef->HeroicAGI != 0;
             case Stat_HeroicCha:        return pDef->HeroicCHA != 0;
-            case Stat_HeroicCorruption: return pDef->HeroicSvCorruption != 0;
             case Stat_HeroicDex:        return pDef->HeroicDEX != 0;
             case Stat_HeroicInt:        return pDef->HeroicINT != 0;
-            case Stat_HeroicPoison:     return pDef->HeroicSvPoison != 0;
             case Stat_HeroicSta:        return pDef->HeroicSTA != 0;
             case Stat_HeroicStr:        return pDef->HeroicSTR != 0;
-            case Stat_HeroicSvCold:     return pDef->HeroicSvCold != 0;
-            case Stat_HeroicSvDisease:  return pDef->HeroicSvDisease != 0;
-            case Stat_HeroicSvFire:     return pDef->HeroicSvFire != 0;
-            case Stat_HeroicSvMagic:    return pDef->HeroicSvMagic != 0;
             case Stat_HeroicWis:        return pDef->HeroicWIS != 0;
             case Stat_HP:               return pDef->HP != 0;
             case Stat_HPRegen:          return pDef->HPRegen != 0;
@@ -1020,13 +1060,9 @@ static bool MatchesStats(const ItemClient* pItem) {
             case Stat_ManaRegen:        return pDef->ManaRegen != 0;
             case Stat_Purity:           return pDef->Purity != 0;
             case Stat_Range:            return pDef->Range != 0;
-            case Stat_Shielding:        return pDef->Shielding != 0;
             case Stat_SpellDamage:      return pDef->SpellDamage != 0;
-            case Stat_SpellShield:      return pDef->SpellShield != 0;
             case Stat_STA:              return pDef->STA != 0;
             case Stat_STR:              return pDef->STR != 0;
-            case Stat_StrikeThrough:    return pDef->StrikeThrough != 0;
-            case Stat_StunResist:       return pDef->StunResist != 0;
             case Stat_SvCold:           return pDef->SvCold != 0;
             case Stat_SvCorruption:     return pDef->SvCorruption != 0;
             case Stat_SvDisease:        return pDef->SvDisease != 0;
@@ -1035,7 +1071,7 @@ static bool MatchesStats(const ItemClient* pItem) {
             case Stat_SvPoison:         return pDef->SvPoison != 0;
             case Stat_Weight:           return pDef->Weight != 0;
             case Stat_WIS:              return pDef->WIS != 0;
-        	
+
         	//Combine these two.
             case Stat_Efficiency:
             case Stat_Ratio:
@@ -1118,7 +1154,7 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 #endif
 		return false;
 	}
-	
+
 	if (!MatchesDeities(pItem)) {
 #ifdef DEBUGGING
 		WriteChatf("\arExcluding: \ap%s\axin MatchesDeities", pItemDef->Deity);
@@ -1132,7 +1168,7 @@ static bool DoesItemMatchFilters(const ItemClient* pItem) {
 #endif
 		return false;
 	}
-	
+
 	if (!MatchesRestrictions(pItem)) {
 #ifdef DEBUGGING
 		WriteChatf("\arExcluding: \ap%s\axin MatchesRestrictions(pItem)", pItemDef->Name);
@@ -1269,7 +1305,7 @@ static std::string FormatLocation(const LocationDetail& d) {
 					bagNum = oneBased(d.topSlotIndex);
 				}
 			}
-			
+
 			out += std::to_string(bagNum);
 			out += " Slot ";
 			out += std::to_string(oneBased(d.bagSlotIndex));
@@ -1331,25 +1367,35 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
 		return 0;
 	}
 
-	switch (stat)
-	{
-
-		case Stat_AC: return def->AC;
+	switch (stat) {
+//Date these stats were sunset
+#if __ClientDate <= 20160518u
 		case Stat_Accuracy: return def->Accuracy;
+		case Stat_Avoidance: return def->Avoidance;
+		case Stat_CombatEffects: return def->CombatEffects;
+		case Stat_DamageShield: return def->DamShield;
+		case Stat_DoTShielding: return def->DoTShielding;
+		case Stat_DSMitigation: return def->DamageShieldMitigation;
+		case Stat_HeroicCorruption: return def->HeroicSvCorruption;
+		case Stat_HeroicPoison: return def->HeroicSvPoison;
+		case Stat_HeroicSvCold: return def->HeroicSvCold;
+		case Stat_HeroicSvDisease: return def->HeroicSvDisease;
+		case Stat_HeroicSvFire: return def->HeroicSvFire;
+		case Stat_HeroicSvMagic: return def->HeroicSvMagic;
+		case Stat_Shielding: return def->Shielding;
+		case Stat_SpellShield: return def->SpellShield;
+		case Stat_StrikeThrough: return def->StrikeThrough;
+		case Stat_StunResist: return def->StunResist;
+#endif
+		case Stat_AC: return def->AC;
 		case Stat_AGI: return def->AGI;
 		case Stat_Attack: return def->Attack;
-		case Stat_Attunable: return def->Attuneable ? 1 : 0;
-		case Stat_Avoidance: return def->Avoidance;
 		case Stat_BackstabDamage: return def->BackstabDamage;
 		case Stat_CHA: return def->CHA;
 		case Stat_Clairvoyance: return def->Clairvoyance;
-		case Stat_CombatEffects: return def->CombatEffects;
 		case Stat_Damage: return def->Damage;
-		case Stat_DamageShield: return def->DamShield;
 		case Stat_DEX: return def->DEX;
 		case Stat_DmgBonus: return def->DmgBonusValue;
-		case Stat_DoTShielding: return def->DoTShielding;
-		case Stat_DSMitigation: return def->DamageShieldMitigation;
 		case Stat_Efficiency: return (def->Damage && def->Delay ? (static_cast<int>(static_cast<float>(def->Damage) / static_cast<float>(def->Delay) * 100.0f)) : 0);
 		case Stat_ElementalDamage: return def->ElementalDamage;
 		case Stat_Endurance: return def->Endurance;
@@ -1361,16 +1407,10 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
 		case Stat_Heirloom: return def->Heirloom ? 1 : 0;
 		case Stat_HeroicAgi: return def->HeroicAGI;
 		case Stat_HeroicCha: return def->HeroicCHA;
-		case Stat_HeroicCorruption: return def->HeroicSvCorruption;
 		case Stat_HeroicDex: return def->HeroicDEX;
 		case Stat_HeroicInt: return def->HeroicINT;
-		case Stat_HeroicPoison: return def->HeroicSvPoison;
 		case Stat_HeroicSta: return def->HeroicSTA;
 		case Stat_HeroicStr: return def->HeroicSTR;
-		case Stat_HeroicSvCold: return def->HeroicSvCold;
-		case Stat_HeroicSvDisease: return def->HeroicSvDisease;
-		case Stat_HeroicSvFire: return def->HeroicSvFire;
-		case Stat_HeroicSvMagic: return def->HeroicSvMagic;
 		case Stat_HeroicWis: return def->HeroicWIS;
 		case Stat_HP: return def->HP;
 		case Stat_HPRegen: return def->HPRegen;
@@ -1379,13 +1419,9 @@ static int GetStatValue(const ItemDefinition* def, const StatID stat)
 		case Stat_ManaRegen: return def->ManaRegen;
 		case Stat_Purity: return def->Purity;
 		case Stat_Range: return def->Range;
-		case Stat_Shielding: return def->Shielding;
 		case Stat_SpellDamage: return def->SpellDamage;
-		case Stat_SpellShield: return def->SpellShield;
 		case Stat_STA: return def->STA;
 		case Stat_STR: return def->STR;
-		case Stat_StrikeThrough: return def->StrikeThrough;
-		case Stat_StunResist: return def->StunResist;
 		case Stat_Summoned: return def->Summoned ? 1 : 0;
 		case Stat_SvCold: return def->SvCold;
 		case Stat_SvCorruption: return def->SvCorruption;
@@ -1479,10 +1515,10 @@ PLUGIN_API void OnUpdateImGui() {
 			strcpy_s(ReqMax, "255");
 			strcpy_s(RecMin, "0");
 			strcpy_s(RecMax, "255");
-			
+
 			std::ranges::for_each(MenuData | std::views::values, [](auto& data) {
 				data.IsEnabled = true;
-				
+
 				std::ranges::for_each(data.OptionList, [](auto& opt) {
 					opt.IsSelected = false;
 				});
@@ -1732,7 +1768,7 @@ PLUGIN_API void OnUpdateImGui() {
 						return false;
 						});
 				}
-				
+
 				sortSpecs->SpecsDirty = false;
 			}
 		}
@@ -1782,7 +1818,7 @@ PLUGIN_API void OnUpdateImGui() {
 			if (!vResult.location.isAug) {
 				char buf[128] = { 0 };
 				sprintf_s(buf, 128, "Grab Item##%s", FormatLocation(vResult.location).c_str());
-				
+
 				//Change color of button based on accesibility
 				switch (vResult.location.loc) {
 					case Loc_Bank:
@@ -1792,17 +1828,17 @@ PLUGIN_API void OnUpdateImGui() {
 						} else {
 							ImGui::PushStyleColor(ImGuiCol_Button, red_dark.ToImU32());//Bank isn't open
 						}
-						
+
 						break;
 					default:
 						ImGui::PushStyleColor(ImGuiCol_Button, green_dark.ToImU32());
 				}
-				
+
 				if (ImGui::SmallButton(buf)) {
 					if (pLocalPC->GetInventorySlot(InvSlot_Cursor)) {
 						DoCommand("/autoinv");
 					}
-					
+
 					switch (vResult.location.loc) {
 						case Loc_Bank:
 						case Loc_Shared_Bank:
@@ -1824,7 +1860,7 @@ PLUGIN_API void OnUpdateImGui() {
 								}
 							}
 							break;
-							
+
 						case Loc_Bags:
 						case Loc_Equipped:
 							if (vResult.location.bagSlotIndex != -1) {
@@ -1837,7 +1873,7 @@ PLUGIN_API void OnUpdateImGui() {
 								DoCommandf("/itemnotify %d leftmouseup", Slot);
 							}
 							break;
-							
+
 						//TODO: handle these.
 						case Loc_Item_Overflow:
 						case Loc_Real_Estate:
@@ -1846,13 +1882,13 @@ PLUGIN_API void OnUpdateImGui() {
 						default:
 							//Shouldn't be here...
 							break;
-					}					
+					}
 				}
-				
+
 				ImGui::PopStyleColor();//Pop button color
 				ImGui::SameLine();
 			}
-			
+
 			std::string locStr = FormatLocation(vResult.location);
 			ImGui::TextUnformatted(locStr.c_str());
 
